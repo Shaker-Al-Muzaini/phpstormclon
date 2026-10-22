@@ -1,0 +1,115 @@
+//! End-to-end test for the phpintel stdio JSON-RPC handshake.
+
+use std::{io, time::Duration};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
+    process::{ChildStdin, ChildStdout, Command},
+    time::timeout,
+};
+
+const IO_TIMEOUT: Duration = Duration::from_secs(5);
+
+async fn read_message(stdout: &mut BufReader<ChildStdout>) -> io::Result<serde_json::Value> {
+    let mut content_length = None;
+    loop {
+        let mut line = String::new();
+        if stdout.read_line(&mut line).await? == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "service closed stdout before completing a frame",
+            ));
+        }
+        if line == "\r\n" || line == "\n" {
+            break;
+        }
+        if let Some((name, value)) = line.trim_end().split_once(':')
+            && name.trim().eq_ignore_ascii_case("content-length")
+        {
+            content_length = Some(
+                value
+                    .trim()
+                    .parse::<usize>()
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?,
+            );
+        }
+    }
+
+    let content_length = content_length.ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "missing Content-Length header")
+    })?;
+    let mut body = vec![0; content_length];
+    stdout.read_exact(&mut body).await?;
+    serde_json::from_slice(&body).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
+}
+
+async fn write_message(stdin: &mut ChildStdin, message: &serde_json::Value) -> io::Result<()> {
+    let body = serde_json::to_vec(message)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    stdin
+        .write_all(format!("Content-Length: {}\r\n\r\n", body.len()).as_bytes())
+        .await?;
+    stdin.write_all(&body).await?;
+    stdin.flush().await
+}
+
+async fn read_message_with_timeout(stdout: &mut BufReader<ChildStdout>) -> serde_json::Value {
+    timeout(IO_TIMEOUT, read_message(stdout))
+        .await
+        .expect("timed out waiting for phpintel response")
+        .expect("invalid JSON-RPC frame from phpintel")
+}
+
+#[tokio::test]
+async fn phpintel_handshakes_answers_requests_and_shuts_down() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_phpintel"))
+        .arg("--stdio")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true)
+        .spawn()
+        .expect("failed to start phpintel");
+    let mut stdin = child.stdin.take().expect("phpintel stdin is unavailable");
+    let mut stdout = BufReader::new(child.stdout.take().expect("phpintel stdout is unavailable"));
+
+    let ready = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(ready["method"], "$/ready");
+    assert_eq!(ready["params"]["service"], "phpintel");
+
+    write_message(
+        &mut stdin,
+        &serde_json::json!({"jsonrpc": "2.0", "id": 1, "method": "$/ping"}),
+    )
+    .await
+    .expect("failed to send ping");
+    let pong = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(pong["id"], 1);
+    assert_eq!(pong["result"]["pong"], true);
+    assert_eq!(pong["result"]["service"], "phpintel");
+
+    write_message(
+        &mut stdin,
+        &serde_json::json!({"jsonrpc": "2.0", "id": 2, "method": "$/unknown"}),
+    )
+    .await
+    .expect("failed to send unknown method request");
+    let error = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(error["id"], 2);
+    assert_eq!(error["error"]["code"], -32601);
+
+    write_message(
+        &mut stdin,
+        &serde_json::json!({"jsonrpc": "2.0", "id": 3, "method": "$/shutdown"}),
+    )
+    .await
+    .expect("failed to send shutdown request");
+    let shutdown = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(shutdown["id"], 3);
+    assert_eq!(shutdown["result"]["ok"], true);
+
+    let status = timeout(IO_TIMEOUT, child.wait())
+        .await
+        .expect("phpintel did not exit after shutdown")
+        .expect("failed to wait for phpintel");
+    assert!(status.success());
+}

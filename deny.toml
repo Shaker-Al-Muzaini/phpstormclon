@@ -1,0 +1,34 @@
+# cargo-deny configuration
+# Run: cargo deny check
+
+[licenses]
+unlicensed = "deny"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MPL-2.0",
+    "Unicode-DFS-2016",
+    "Unicode-3.0",
+    "CC0-1.0",
+    "Zlib",
+    "OpenSSL",
+]
+copyleft = "deny"
+
+[bans]
+multiple-versions = "warn"
+
+[advisories]
+database-path = "~/.cargo/advisory-db"
+vulnerability = "deny"
+notice = "warn"
+ignore = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = []

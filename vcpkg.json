@@ -1,0 +1,11 @@
+{
+  "name": "forge-ide",
+  "version-string": "0.1.0-dev",
+  "description": "Forge IDE — native PHP/Laravel IDE dependencies",
+  "builtin-baseline": "67972e92edd181d433927b42d8ab4bfa52ac164a",
+  "dependencies": [
+    "nlohmann-json",
+    "gtest",
+    "spdlog"
+  ]
+}

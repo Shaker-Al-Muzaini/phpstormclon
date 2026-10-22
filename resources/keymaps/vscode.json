@@ -1,0 +1,30 @@
+{
+  "$schema": "forge://keymap/v1",
+  "name": "VS Code",
+  "description": "VS Code-compatible keymap.",
+  "license": "Apache-2.0",
+  "extends": "default",
+  "bindings": {
+    "forge.navigate.goToFile":               "Ctrl+P",
+    "forge.navigate.goToSymbol":             "Ctrl+Shift+O",
+    "forge.navigate.goToDeclaration":        "F12",
+    "forge.navigate.findUsages":             "Shift+F12",
+    "forge.navigate.searchEverywhere":       "Ctrl+Shift+P",
+    "forge.code.completion":                 "Ctrl+Space",
+    "forge.code.parameterInfo":              "Ctrl+Shift+Space",
+    "forge.code.showIntentions":             "Ctrl+.",
+    "forge.code.reformat":                   "Alt+Shift+F",
+    "forge.refactor.rename":                 "F2",
+    "forge.edit.duplicateLine":              "Ctrl+Shift+D",
+    "forge.edit.deleteLine":                 "Ctrl+Shift+K",
+    "forge.edit.toggleComment":              "Ctrl+/",
+    "forge.run.run":                         "Ctrl+F5",
+    "forge.run.debug":                       "F5",
+    "forge.debug.stepOver":                  "F10",
+    "forge.debug.stepInto":                  "F11",
+    "forge.debug.stepOut":                   "Shift+F11",
+    "forge.debug.toggleBreakpoint":          "F9",
+    "forge.window.terminal":                 "Ctrl+`",
+    "forge.window.settings":                 "Ctrl+,"
+  }
+}

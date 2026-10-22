@@ -1,0 +1,62 @@
+[workspace]
+members = [
+    "services/phpintel",
+    "services/vcs",
+    "services/dbgp",
+    "services/dbtools",
+    "services/term",
+    "services/ai-gateway",
+    "services/rpc-common",
+    "tests",
+]
+resolver = "2"
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2024"
+authors      = ["Forge IDE Contributors"]
+license      = "Apache-2.0"
+repository   = "https://github.com/forge-ide/forge-ide"
+rust-version = "1.85"
+
+[workspace.dependencies]
+# JSON-RPC / IPC
+serde          = { version = "1.0",  features = ["derive"] }
+serde_json     = "1.0"
+tokio          = { version = "1.43", features = ["full"] }
+tokio-util     = { version = "0.7",  features = ["codec"] }
+
+# Parsing
+# tree-sitter 0.25.x — latest stable as of 2026-10-21
+tree-sitter    = "0.25"
+
+# Tracing / logging
+tracing             = "0.1"
+tracing-subscriber  = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling
+anyhow  = "1.0"
+thiserror = "1.0"
+
+# Framing / bytes
+bytes         = "1.9"
+
+# Async stream combinators
+futures-util  = { version = "0.3", features = ["sink"] }
+
+# Async channels
+async-channel = "2.3"
+
+# Other utilities
+uuid          = { version = "1.11", features = ["v4"] }
+once_cell     = "1.20"
+
+[profile.release]
+opt-level     = 3
+lto           = "thin"
+codegen-units = 1
+strip         = "symbols"
+
+[profile.dev]
+opt-level = 0
+debug     = true

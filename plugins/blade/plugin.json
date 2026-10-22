@@ -1,0 +1,21 @@
+{
+  "$schema": "forge://plugin/v1",
+  "id": "forge.blade",
+  "name": "Blade",
+  "version": "0.1.0",
+  "vendor": "Forge IDE Contributors",
+  "description": "Blade template language support: syntax highlighting, directives, component navigation, formatting.",
+  "sinceBuild": "0.1.0",
+  "untilBuild": "1.0.0",
+  "dependencies": [
+    { "id": "forge.core", "version": ">=0.1.0" }
+  ],
+  "entryLibrary": "forge_blade.dll",
+  "extensions": [
+    { "point": "forge.fileType",              "id": "blade.php", "name": "Blade Template", "extensions": ["blade.php"], "icon": "blade.svg" },
+    { "point": "forge.completionContributor", "fileTypes": ["blade.php"] },
+    { "point": "forge.annotator",             "fileTypes": ["blade.php"] }
+  ],
+  "permissions": ["fs.read", "ui"],
+  "signature": ""
+}

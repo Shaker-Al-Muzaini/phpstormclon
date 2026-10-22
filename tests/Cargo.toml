@@ -1,0 +1,12 @@
+[package]
+name    = "forge-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "forge_tests"
+path = "src/lib.rs"
+
+[dev-dependencies]
+serde_json.workspace = true

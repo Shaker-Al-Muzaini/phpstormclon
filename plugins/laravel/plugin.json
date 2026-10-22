@@ -1,0 +1,24 @@
+{
+  "$schema": "forge://plugin/v1",
+  "id": "forge.laravel",
+  "name": "Laravel",
+  "version": "0.1.0",
+  "vendor": "Forge IDE Contributors",
+  "description": "Laravel framework intelligence: routes, Blade, Eloquent, artisan, config/env, facades, Livewire.",
+  "sinceBuild": "0.1.0",
+  "untilBuild": "1.0.0",
+  "dependencies": [
+    { "id": "forge.core", "version": ">=0.1.0" },
+    { "id": "forge.blade", "version": ">=0.1.0" }
+  ],
+  "entryLibrary": "forge_laravel.dll",
+  "extensions": [
+    { "point": "forge.completionContributor", "fileTypes": ["php", "blade"] },
+    { "point": "forge.annotator",             "fileTypes": ["php", "blade"] },
+    { "point": "forge.toolWindow",            "id": "forge.routeList",    "title": "Route List",   "icon": "route.svg" },
+    { "point": "forge.toolWindow",            "id": "forge.artisan",      "title": "Artisan",      "icon": "artisan.svg" },
+    { "point": "forge.action",                "id": "forge.laravel.runArtisan", "displayName": "Run Artisan Command" }
+  ],
+  "permissions": ["fs.read", "process.spawn", "ui"],
+  "signature": ""
+}

@@ -1,0 +1,15 @@
+---
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 100
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: Empty
+BraceWrapping:
+  AfterClass: false
+  AfterFunction: false
+  AfterNamespace: false
+IncludeBlocks: Regroup
+SortIncludes: CaseInsensitive
+SpaceBeforeParens: ControlStatements
+PointerAlignment: Left
+...

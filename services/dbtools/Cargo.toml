@@ -1,0 +1,20 @@
+[package]
+name    = "dbtools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "dbtools"
+path = "src/main.rs"
+
+[dependencies]
+rpc-common          = { path = "../rpc-common" }
+serde.workspace      = true
+serde_json.workspace = true
+tokio.workspace      = true
+tracing.workspace    = true
+tracing-subscriber.workspace = true
+anyhow.workspace     = true
+# sqlx for database access (MIT/Apache-2.0)
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "mysql", "postgres"] }

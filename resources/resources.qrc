@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/">
+    <file>keymaps/default.json</file>
+    <file>keymaps/vscode.json</file>
+    <file>themes/graphite.json</file>
+    <file>themes/daylight.json</file>
+  </qresource>
+</RCC>
