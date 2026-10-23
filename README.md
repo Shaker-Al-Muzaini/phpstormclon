@@ -1,4 +1,4 @@
-# Forge IDE
+# Forge IDE 
 
 **A native PHP/Laravel desktop IDE — built for speed with Qt 6 and Rust.**
 
