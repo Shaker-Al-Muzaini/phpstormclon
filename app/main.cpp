@@ -14,20 +14,22 @@
  */
 
 #include <QApplication>
-#include <QLocale>
-#include <QTranslator>
-#include <QDir>
-#include <QIcon>
-#include <QStandardPaths>
 #include <QDebug>
+#include <QDir>
+#include <QElapsedTimer>
+#include <QIcon>
+#include <QLocale>
+#include <QStandardPaths>
+#include <QTimer>
+#include <QTranslator>
 
-#include "MainWindow.h"
-#include "forge/core/Settings.h"
-#include "forge/core/ServiceSupervisor.h"
+#include "BrandSplash.h"
 #include "forge/core/ActionManager.h"
+#include "forge/core/ServiceSupervisor.h"
+#include "forge/core/Settings.h"
+#include "MainWindow.h"
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     // High-DPI: let Qt handle it automatically (Qt 6 default)
     QApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
@@ -40,8 +42,8 @@ int main(int argc, char* argv[])
     app.setWindowIcon(QIcon(QStringLiteral(":/icons/forge.svg")));
 
     // Ensure log directory exists
-    const QString logDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
-                           + QStringLiteral("/logs");
+    const QString logDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) +
+                           QStringLiteral("/logs");
     QDir().mkpath(logDir);
 
     // Settings (singleton)
@@ -66,9 +68,33 @@ int main(int argc, char* argv[])
         }
     }
 
-    // Create and show main window
+    BrandSplash splash;
+    if (!app.arguments().contains("--no-splash")) {
+        splash.show();
+        app.processEvents();
+    }
+    // Keep branding readable without blocking workspace initialization or the event loop.
     MainWindow window(&actionManager, &supervisor);
+    auto option = [&app](const QString& key) {
+        const int i = app.arguments().indexOf(key);
+        return i >= 0 && i + 1 < app.arguments().size() ? app.arguments().at(i + 1) : QString();
+    };
+    if (!option("--project").isEmpty()) window.openProjectPath(option("--project"));
+    if (!option("--file").isEmpty()) window.openDocument(option("--file"));
+    if (!option("--theme").isEmpty()) window.selectTheme(option("--theme"));
+    if (!option("--splash-screenshot").isEmpty())
+        BrandSplash::artwork().save(option("--splash-screenshot"));
+    if (app.arguments().contains("--rtl")) window.setLayoutDirection(Qt::RightToLeft);
     window.show();
+    if (!app.arguments().contains("--no-splash"))
+        QTimer::singleShot(650, &splash, [&splash, &window]() { splash.finish(&window); });
+    if (app.arguments().contains("--screenshot")) {
+        const int i = app.arguments().indexOf("--screenshot");
+        if (i + 1 < app.arguments().size())
+            QTimer::singleShot(700, &window, [&window, &app, i]() {
+                app.exit(window.grab().save(app.arguments().at(i + 1)) ? 0 : 2);
+            });
+    }
 
     return app.exec();
 }

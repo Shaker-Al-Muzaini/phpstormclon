@@ -1,16 +1,13 @@
 #include "forge/core/ActionManager.h"
+
 #include <QDebug>
 
 namespace forge::core {
 
-ActionManager::ActionManager(QObject* parent)
-    : QObject(parent)
-{}
+ActionManager::ActionManager(QObject* parent) : QObject(parent) {}
 
-QAction* ActionManager::registerAction(const QString& id,
-                                       const QString& displayName,
-                                       std::function<void()> handler)
-{
+QAction* ActionManager::registerAction(const QString& id, const QString& displayName,
+                                       std::function<void()> handler) {
     if (m_actions.contains(id)) {
         qWarning() << "[ActionManager] Action already registered:" << id;
         return m_actions.value(id);
@@ -23,13 +20,11 @@ QAction* ActionManager::registerAction(const QString& id,
     return action;
 }
 
-QAction* ActionManager::action(const QString& id) const
-{
+QAction* ActionManager::action(const QString& id) const {
     return m_actions.value(id, nullptr);
 }
 
-void ActionManager::applyKeymap(const QHash<QString, QString>& bindings)
-{
+void ActionManager::applyKeymap(const QHash<QString, QString>& bindings) {
     for (auto it = bindings.cbegin(); it != bindings.cend(); ++it) {
         QAction* act = m_actions.value(it.key(), nullptr);
         if (!act) continue;
@@ -37,9 +32,8 @@ void ActionManager::applyKeymap(const QHash<QString, QString>& bindings)
     }
 }
 
-QStringList ActionManager::allActionIds() const
-{
+QStringList ActionManager::allActionIds() const {
     return m_actions.keys();
 }
 
-} // namespace forge::core
+}  // namespace forge::core

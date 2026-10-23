@@ -52,27 +52,27 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 #  Corrosion — integrates Cargo workspace into CMake
 #  Version: v0.6.1 (latest stable as of 2026-10-21)
 # ============================================================
-if(NOT DEFINED Rust_TOOLCHAIN)
-    set(Rust_TOOLCHAIN "1.99.1" CACHE STRING "Pinned Rust toolchain")
+option(FORGE_BUILD_RUST "Build the existing Rust services" ON)
+set(FORGE_QT_MIN_VERSION "6.8" CACHE STRING "Minimum Qt version (Windows production uses 6.8)")
+if(FORGE_BUILD_RUST)
+    if(NOT DEFINED Rust_TOOLCHAIN)
+        set(Rust_TOOLCHAIN "1.99.1" CACHE STRING "Pinned Rust toolchain")
+    endif()
+    include(FetchContent)
+    FetchContent_Declare(Corrosion GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git GIT_TAG v0.6.1)
+    FetchContent_MakeAvailable(Corrosion)
 endif()
-
-include(FetchContent)
-FetchContent_Declare(
-    Corrosion
-    GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
-    GIT_TAG        v0.6.1
-)
-FetchContent_MakeAvailable(Corrosion)
 
 # ============================================================
 #  Qt 6.8 LTS
 #  Set QT_ROOT or QT_DIR to your Qt installation, e.g.:
 #    -DCMAKE_PREFIX_PATH="C:/Qt/6.8.x/msvc2022_64"
 # ============================================================
-find_package(Qt6 6.8 REQUIRED COMPONENTS
-    Core Widgets Gui Network
+find_package(Qt6 ${FORGE_QT_MIN_VERSION} REQUIRED COMPONENTS
+    Core Widgets Gui Network Concurrent Test
 )
 qt_standard_project_setup()
+find_package(ZLIB REQUIRED)
 
 message(STATUS "Qt version: ${Qt6_VERSION}")
 
@@ -105,10 +105,12 @@ include(GoogleTest)
 # ============================================================
 #  Rust services — import from workspace Cargo.toml
 # ============================================================
+if(FORGE_BUILD_RUST)
 corrosion_import_crate(
     MANIFEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
     CRATES phpintel vcs dbgp dbtools term ai-gateway rpc-common
 )
+endif()
 
 # ============================================================
 #  Sub-directories

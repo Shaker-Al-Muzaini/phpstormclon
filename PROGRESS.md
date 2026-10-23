@@ -2,10 +2,29 @@
 
 ## Status
 
-**Current session: S1 — Data integrity and service lifecycle (local checks complete; hosted CI pending)**
+**Current session: Native workspace redesign — local C++ checks complete; new Windows CI verification pending**
 **Product milestone: M1 — Shell and Docking (in progress)**
 
 ---
+
+## 2026-10-23 workspace continuation
+
+- Continued the existing Qt/C++ + Rust codebase on `codex/native-workspace-redesign`; no re-scaffolding or production toolchain changes.
+- Replaced classic chrome with a compact toolbar, hamburger menu, recent-project selector, branch indicator, functioning stripes, project header/context menu, and updated status controls.
+- Added a separate original startup splash: Shaker Al-Muzayni / شاكر المزيني, SM monogram, portfolio forest/mint/gold. The workspace keeps neutral IDE colors, as clarified by the user.
+- Added Graphite, Daylight, Midnight, Obsidian, Ocean, Amethyst; live switching, persistent selection and theme-aware UI/editor/terminal colors.
+- Added inline find/replace (case/word/regex, literal replacement, undoable replace-all), project search on background workers, file/action quick open, double-Shift and conventional shortcuts.
+- Added shared-document split right/down, tab context actions, recent files, editable encoding/EOL/indent controls and read-only mode.
+- Activated declarative extensions: Open VSX search/download; VSIX/ZIP/folder imports; enable/disable/uninstall; theme/snippet/keymap contributions. Tested a real MIT One Dark 2.3.0 VSIX from Open VSX. Executable/JVM/Node extensions remain unsupported and are explicitly rejected.
+- Added file watching and external-overwrite confirmation, atomic settings writes, UTF-8 terminal I/O configuration, and a shutdown lifecycle fix found with AddressSanitizer.
+- Split the former 3,000-line MainWindow file into focused implementation files and reusable widgets. Fixed resource embedding (AUTORCC), which previously prevented the app from loading bundled themes/keymaps.
+- Preserved Windows presets and added `tools/build-local.ps1` with vswhere-based MSVC discovery, CTest/Cargo checks, Qt deployment and portable packaging.
+- Hosted verification fixed the previous MSVC setup failure. Rust checks passed; Windows C++ formatting passed after enforcing source LF endings. The next run exposed missing pinned vcpkg registry history in the runner checkout; the build now fetches that official commit when absent without changing the installed checkout. Final Windows build/test remains pending.
+- Fixed editor font inheritance so UI styling cannot replace its monospace font; added a fixed-pitch UI regression assertion.
+- Local verification: the C++ workspace builds on Linux Qt 6.4.2 using the explicit UI-only compatibility switches; 27/27 tests passed, including real deflated VSIX import and the startup screenshot test; the suite also passed in an AddressSanitizer build (leak detection disabled for external Qt libraries). Final results are recorded in `docs/WORKSPACE_REDESIGN.md`. Production defaults remain Qt 6.8 / Rust 1.99.1 / MSVC on Windows; new hosted CI is tracked separately.
+- Remaining gaps: Qt built-in docking rather than ADS/auto-hide, one additional editor split rather than arbitrary pane trees, limited declarative extension compatibility, redirected terminal rather than ConPTY, and the existing PHP/Laravel/Git/debugger/database/AI roadmap. No semantic analysis or benchmark budgets are claimed complete.
+
+## Earlier milestone history
 
 ## Done
 
@@ -86,9 +105,9 @@
 
 - M1 is not complete: tool windows use Qt's built-in docking rather than Qt Advanced Docking System; configurable auto-hide stripes, working debugger controls, complete settings/keymap selection, per-project layouts, and RTL/high-DPI verification remain.
 - The icon system assigns language badges to common PHP/Blade/web/config file types; unsupported extensions use the generic document icon.
-- The current terminal is a redirected PowerShell session, not ConPTY. Full terminal emulation, interactive TTY applications, terminal profiles/tabs, and robust Ctrl+C handling remain planned for M6.
-- The current editor has a gutter and basic lexical highlighting, but not tree-sitter parsing or semantic tokens. Encoding detection and line-ending preservation now cover UTF-8, UTF-16, and Windows code pages; tabs/splits and large-file handling remain unimplemented.
-- Plugin Manager is informational and scans local manifests only. Signed marketplace catalog verification, native DLL loading/lifecycle, plugin enable/disable, and online installation remain unimplemented; no third-party code is downloaded or executed.
+- The terminal has multiple redirected PowerShell sessions and UTF-8 configuration; ConPTY, full ANSI/TTY behavior, profiles and robust Ctrl+C remain planned.
+- The current editor has a gutter and basic lexical highlighting, but not tree-sitter parsing or semantic tokens. Encoding detection and line-ending preservation now cover UTF-8, UTF-16, and Windows code pages; tabs and one shared-document split now work; large-file limits/highlighting fallback are present, but streaming and the rope buffer remain unimplemented.
+- Plugin Manager now installs supported declarative packages through Open VSX/local archives. Native DLL/JVM/JavaScript extension hosts, semantic language plugins, signed native catalog verification and icon packs remain unimplemented. Downloaded executable code is never loaded.
 - Xdebug support is an early CLI workflow: it requires Xdebug 3 already enabled in `php.exe`,
   listens on local port 9003, and supports a caret-line breakpoint plus step commands. Call
   stack, variable/watch inspection, conditional breakpoints, web requests, path mappings, and

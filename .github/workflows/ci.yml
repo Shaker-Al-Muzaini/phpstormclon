@@ -19,7 +19,7 @@ jobs:
   # ============================================================
   rust:
     name: Rust 1.99.1 (Windows x64)
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
@@ -58,7 +58,7 @@ jobs:
   # ============================================================
   cpp:
     name: C++ / Qt6 (Windows x64, MSVC)
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
@@ -71,10 +71,9 @@ jobs:
           arch: win64_msvc2022_64
           cache: true
 
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@286b8361db1ed000638eec123e4f123256767362
-        with:
-          arch: x64
+      - name: Setup MSVC using Developer PowerShell
+        shell: pwsh
+        run: ./tools/msvc-env.ps1
 
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@8b297075da4cd2a5f1fd21fe011b499edf06e9d2
@@ -88,7 +87,10 @@ jobs:
         run: python -m pip install clang-format==19.1.5
 
       - name: Check C++ formatting
-        run: clang-format --dry-run --Werror core/include/forge/core/TextFileCodec.h core/src/TextFileCodec.cpp tests/unit/test_main.cpp
+        shell: pwsh
+        run: |
+          $sources = Get-ChildItem app,core,tests -Recurse -Include *.h,*.cpp | ForEach-Object { $_.FullName }
+          clang-format --dry-run --Werror @sources
 
       - name: Configure vcpkg environment
         shell: pwsh
@@ -96,16 +98,35 @@ jobs:
           if (-not $env:VCPKG_INSTALLATION_ROOT) {
             throw "VCPKG_INSTALLATION_ROOT is not configured on the Windows runner"
           }
+          $env:VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
+          ./tools/ensure-vcpkg-baseline.ps1
           "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
       - name: Configure CMake
-        run: cmake --preset windows-release "-DCMAKE_PREFIX_PATH=$env:Qt6_DIR"
+        run: cmake --preset windows-release "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR"
 
       - name: Build
         run: cmake --build build/windows-release --config Release
 
       - name: Test
         run: ctest --preset windows-release --output-on-failure
+
+      - name: Deploy portable Windows build
+        shell: pwsh
+        run: |
+          & "$env:QT_ROOT_DIR/bin/windeployqt.exe" --release --no-translations build/windows-release/bin/ForgeIDE.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Qt deployment failed' }
+          Copy-Item LICENSE,THIRD_PARTY_NOTICES.md build/windows-release/bin/
+          Copy-Item docs/WINDOWS.md build/windows-release/bin/RUNNING.md
+          Remove-Item build/windows-release/bin/forge*_tests.exe -ErrorAction SilentlyContinue
+
+      - name: Upload portable Windows build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ForgeIDE-windows-x64
+          path: build/windows-release/bin/
+          retention-days: 14
+          if-no-files-found: error
 
   # ============================================================
   # License audit

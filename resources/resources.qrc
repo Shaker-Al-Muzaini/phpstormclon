@@ -6,5 +6,10 @@
     <file>keymaps/vscode.json</file>
     <file>themes/graphite.json</file>
     <file>themes/daylight.json</file>
+    <file>themes/midnight.json</file>
+    <file>themes/obsidian.json</file>
+    <file>themes/ocean.json</file>
+    <file>themes/amethyst.json</file>
+
   </qresource>
 </RCC>

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <QMainWindow>
+#include <memory>
+#include <QElapsedTimer>
 #include <QHash>
 #include <QList>
+#include <QMainWindow>
 #include <QStringList>
-#include <memory>
 
 #include "forge/core/ServiceSupervisor.h"
 
@@ -21,24 +22,42 @@ class QTreeView;
 class QTcpServer;
 class QTcpSocket;
 class QWidget;
+class QToolButton;
+class QTreeWidget;
+class QMenu;
+class QLineEdit;
+class FindBar;
+class QSplitter;
 
 namespace forge::core {
 class ActionManager;
 class KeymapManager;
 class RpcClient;
 class Settings;
-}
+class ProjectSearch;
+class ExtensionManager;
+class FileWatcher;
+}  // namespace forge::core
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(forge::core::ActionManager* actions,
-                        forge::core::ServiceSupervisor* supervisor,
-                        QWidget* parent = nullptr);
+                        forge::core::ServiceSupervisor* supervisor, QWidget* parent = nullptr);
     ~MainWindow() override;
+    void openProjectPath(const QString& path) {
+        setProjectRoot(path);
+    }
+    void openDocument(const QString& path) {
+        openFilePath(path);
+    }
+    void selectTheme(const QString& name) {
+        applyTheme(name);
+    }
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    bool eventFilter(QObject* object, QEvent* event) override;
 
 private slots:
     void onServiceStateChanged(const QString& key,
@@ -47,6 +66,22 @@ private slots:
 
 private:
     void setupActions();
+    void setupWorkspaceFeatures();
+    void showQuickOpen(bool actionsOnly = false);
+    void splitEditor(Qt::Orientation orientation);
+    void syncSplitEditor();
+    void decorateEditorTab(QPlainTextEdit* editor);
+    void showFindInFiles();
+    void refreshThemeMenus();
+    void applyWorkspaceStyle(const QJsonObject& theme);
+    void refreshExtensionBindings();
+    void refreshBranch();
+    void insertSnippet();
+    void editLine(const QString& operation);
+    void projectContextMenu(const QPoint& position);
+    void reloadDocument(QPlainTextEdit* editor);
+    bool confirmExternalChange(QPlainTextEdit* editor, const QString& path);
+    void updateDocumentInfo();
     void setupMenus();
     void setupToolbars();
     void setupToolWindows();
@@ -122,6 +157,22 @@ private:
     qint64 m_profileStartedAt = 0;
     QString m_projectRoot;
     QString m_themeName = QStringLiteral("Graphite");
+    FindBar* m_findBar = nullptr;
+    QSplitter* m_editorSplitter = nullptr;
+    QPlainTextEdit* m_splitEditor = nullptr;
+    forge::core::ProjectSearch* m_projectSearch = nullptr;
+    forge::core::ExtensionManager* m_extensions = nullptr;
+    forge::core::FileWatcher* m_fileWatcher = nullptr;
+    QMenu* m_themeMenu = nullptr;
+    QToolButton* m_projectButton = nullptr;
+    QToolButton* m_branchButton = nullptr;
+    QToolButton* m_encodingButton = nullptr;
+    QToolButton* m_eolButton = nullptr;
+    QToolButton* m_indentButton = nullptr;
+    QToolButton* m_readOnlyButton = nullptr;
+    QLabel* m_breadcrumbs = nullptr;
+    QElapsedTimer m_shiftTimer;
+    bool m_shiftOnly = false;
     QString m_lastFindQuery;
     QStringList m_recentFiles;
     bool m_servicesStopping = false;

@@ -1,12 +1,12 @@
 #pragma once
+#include <atomic>
+#include <functional>
+#include <QHash>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QObject>
 #include <QProcess>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QHash>
-#include <QJsonValue>
-#include <functional>
-#include <atomic>
 
 namespace forge::core {
 
@@ -23,7 +23,8 @@ namespace forge::core {
 class RpcClient : public QObject {
     Q_OBJECT
 public:
-    using ResponseCallback = std::function<void(const QJsonObject& result, const QJsonObject& error)>;
+    using ResponseCallback =
+        std::function<void(const QJsonObject& result, const QJsonObject& error)>;
 
     explicit RpcClient(QProcess* serviceProcess, QObject* parent = nullptr);
 
@@ -59,11 +60,11 @@ private:
     QByteArray encodeMessage(const QJsonObject& obj) const;
     void failPending(const QString& reason);
 
-    QProcess*                         m_process;
-    QByteArray                        m_readBuffer;
-    std::atomic<int>                  m_nextId{1};
-    QHash<int, ResponseCallback>      m_pending;
+    QProcess* m_process;
+    QByteArray m_readBuffer;
+    std::atomic<int> m_nextId{1};
+    QHash<int, ResponseCallback> m_pending;
     static constexpr qsizetype kMaxFrameBytes = 64 * 1024 * 1024;
 };
 
-} // namespace forge::core
+}  // namespace forge::core

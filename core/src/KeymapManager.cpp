@@ -1,26 +1,24 @@
 #include "forge/core/KeymapManager.h"
-#include "forge/core/ActionManager.h"
+
+#include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QDebug>
+
+#include "forge/core/ActionManager.h"
 
 namespace forge::core {
 
 KeymapManager::KeymapManager(ActionManager* actionManager, QObject* parent)
-    : QObject(parent)
-    , m_actionManager(actionManager)
-{
+    : QObject(parent), m_actionManager(actionManager) {
     Q_ASSERT(actionManager);
 }
 
-bool KeymapManager::loadDefaultKeymap()
-{
+bool KeymapManager::loadDefaultKeymap() {
     return loadKeymap(QStringLiteral(":/keymaps/default.json"));
 }
 
-bool KeymapManager::loadKeymap(const QString& filePath)
-{
+bool KeymapManager::loadKeymap(const QString& filePath) {
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "[KeymapManager] Cannot open keymap file:" << filePath;
@@ -47,13 +45,11 @@ bool KeymapManager::loadKeymap(const QString& filePath)
     return true;
 }
 
-QString KeymapManager::activeKeymapName() const
-{
+QString KeymapManager::activeKeymapName() const {
     return m_activeKeymapName;
 }
 
-QHash<QString, QString> KeymapManager::parseBindings(const QJsonObject& root) const
-{
+QHash<QString, QString> KeymapManager::parseBindings(const QJsonObject& root) const {
     QHash<QString, QString> bindings;
     const QJsonObject b = root.value(QStringLiteral("bindings")).toObject();
     for (auto it = b.constBegin(); it != b.constEnd(); ++it) {
@@ -62,10 +58,9 @@ QHash<QString, QString> KeymapManager::parseBindings(const QJsonObject& root) co
     return bindings;
 }
 
-bool KeymapManager::applyBindings(const QHash<QString, QString>& bindings)
-{
+bool KeymapManager::applyBindings(const QHash<QString, QString>& bindings) {
     m_actionManager->applyKeymap(bindings);
     return true;
 }
 
-} // namespace forge::core
+}  // namespace forge::core

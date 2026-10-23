@@ -1,10 +1,10 @@
 #pragma once
-#include <QObject>
-#include <QAction>
-#include <QKeySequence>
-#include <QString>
-#include <QHash>
 #include <functional>
+#include <QAction>
+#include <QHash>
+#include <QKeySequence>
+#include <QObject>
+#include <QString>
 
 namespace forge::core {
 
@@ -28,8 +28,7 @@ public:
      * @param handler     Callable invoked when the action is triggered
      * @return            The created QAction (owned by ActionManager)
      */
-    QAction* registerAction(const QString& id,
-                            const QString& displayName,
+    QAction* registerAction(const QString& id, const QString& displayName,
                             std::function<void()> handler);
 
     /// Retrieve an action by id (returns nullptr if not found).
@@ -42,7 +41,7 @@ public:
     QStringList allActionIds() const;
 
 private:
-    QHash<QString, QAction*> m_actions; ///< id -> QAction
+    QHash<QString, QAction*> m_actions;  ///< id -> QAction
 };
 
-} // namespace forge::core
+}  // namespace forge::core

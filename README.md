@@ -1,4 +1,4 @@
-# Forge IDE 
+# Forge IDE
 
 **A native PHP/Laravel desktop IDE — built for speed with Qt 6 and Rust.**
 
@@ -47,6 +47,14 @@ fully open, native Windows application. It is designed from the ground up for sp
 | M11 | Database tools |
 | M12 | Local AI assistant (Ollama, llama.cpp) |
 | M13 | Polish, performance, accessibility, i18n |
+
+## Workspace redesign
+
+The current feature branch adds a compact native IDE shell, a separate Shaker-branded startup splash, six themes, working file/action/project search, shared-document editor splits, external-write protection, and declarative extension installation through Open VSX or local VSIX/ZIP packages.
+
+See [Windows build/run instructions](docs/WINDOWS.md), [verification and visual differences](docs/WORKSPACE_REDESIGN.md), and [current progress](PROGRESS.md). Language-engine, full debugger/Git/database/AI milestones remain incomplete. Executable VS Code and JetBrains plugins require their own extension hosts and are not supported by the declarative importer.
+
+![Native workspace](docs/screens/graphite-100.png)
 
 ## Building
 
@@ -137,8 +145,8 @@ Apache-2.0. See [LICENSE](LICENSE).
 
 Third-party licenses: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (generated in CI).
 
-Fonts bundled: JetBrains Mono (SIL OFL), Inter (SIL OFL).
-Icons: Lucide (ISC) + original SVGs.
+Preferred fonts: JetBrains Mono and Inter when installed locally; font files are not currently bundled.
+Icons and startup artwork: original project QPainter glyphs; third-party icon sets remain planned.
 
 ## Contributing
 

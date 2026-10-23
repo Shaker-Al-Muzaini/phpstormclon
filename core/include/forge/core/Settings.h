@@ -1,8 +1,8 @@
 #pragma once
-#include <QObject>
-#include <QVariant>
-#include <QString>
 #include <QJsonObject>
+#include <QObject>
+#include <QString>
+#include <QVariant>
 
 namespace forge::core {
 
@@ -16,13 +16,14 @@ class Settings : public QObject {
     Q_OBJECT
 public:
     explicit Settings(QObject* parent = nullptr);
+    ~Settings() override;
 
     static Settings* instance();
 
     QVariant value(const QString& key, const QVariant& defaultValue = {}) const;
-    void     setValue(const QString& key, const QVariant& value);
-    void     save();
-    void     load();
+    void setValue(const QString& key, const QVariant& value);
+    void save();
+    void load();
 
 signals:
     void settingChanged(const QString& key, const QVariant& newValue);
@@ -34,4 +35,4 @@ private:
     static Settings* s_instance;
 };
 
-} // namespace forge::core
+}  // namespace forge::core

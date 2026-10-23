@@ -6,6 +6,7 @@
   "dependencies": [
     "nlohmann-json",
     "gtest",
-    "spdlog"
+    "spdlog",
+    "zlib"
   ]
 }

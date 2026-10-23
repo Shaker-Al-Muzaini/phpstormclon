@@ -15,6 +15,7 @@ Format: `YYYY-MM-DD | Decision | Reason`
 | 2026-10-21 | tree-sitter-php v0.25.1 | Latest stable PHP grammar for tree-sitter |
 | 2026-10-21 | vcpkg manifest mode | Reproducible, version-locked C++ dependencies per-project |
 | 2026-10-22 | vcpkg builtin baseline `67972e92edd181d433927b42d8ab4bfa52ac164a` | Pin manifest dependency resolution to an official vcpkg repository revision; the bundled vcpkg binary version hash is not a registry commit |
+| 2026-10-23 | Fetch missing pinned vcpkg history before configuration | Hosted Windows checkout lacked the baseline object. Verify `versions/baseline.json`, fetch the exact commit from the official registry only when absent; do not reset or replace the user's installed checkout. |
 | 2026-10-21 | nlohmann/json via vcpkg | Header-only, MIT license, used for settings/theme JSON in C++ |
 | 2026-10-21 | spdlog via vcpkg | Fast, MIT-licensed C++ logging; integrates with Qt logging categories |
 | 2026-10-21 | JetBrains Mono as default editor font | SIL OFL licensed; best-in-class coding legibility; official open alternative |
@@ -38,3 +39,9 @@ Format: `YYYY-MM-DD | Decision | Reason`
 | 2026-10-23 | Cap JSON-RPC frames at 64 MiB and headers at 8 KiB; fail pending calls when the peer exits | Bound untrusted IPC input and make service failures observable to request handlers |
 | 2026-10-23 | Keep the RSA Marvin advisory visible but narrowly acknowledged in dependency policy | No fixed rsa version is available; it is currently only pulled in transitively by the dbtools SQLx MySQL feature, whose database functionality is not yet implemented |
 | 2026-10-23 | Upgrade git2 and Tokio to patched releases; remove unused portable-pty dependency | Resolve reported unsoundness/race advisories and avoid an unmaintained serial dependency pulled by an unused terminal skeleton |
+
+| 2026-10-23 | Continue existing Qt/Rust sources on a feature branch; do not scaffold a replacement | User explicitly requested continuation and preserving their Windows environment |
+| 2026-10-23 | Neutral IDE colors for workspace; portfolio green/gold only on startup splash | User clarified the visual reference and branding boundary |
+| 2026-10-23 | Declarative VSIX/ZIP imports and Open VSX registry; reject executable plugin hosts | Provide working interoperable themes/snippets/keymaps without falsely claiming JVM/Node extension compatibility |
+| 2026-10-23 | Keep production Qt 6.8/Rust pins; add explicit UI-only build options for local validation | Linux review SDK differs from the user's Windows setup; defaults remain unchanged |
+| 2026-10-23 | Use Visual Studio Developer PowerShell via vswhere in CI and local helper | Avoid the failing third-party MSVC setup action and hard-coded Build Tools paths |

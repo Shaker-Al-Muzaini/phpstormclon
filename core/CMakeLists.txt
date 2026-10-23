@@ -8,6 +8,14 @@ add_library(forge_core STATIC
     include/forge/core/ServiceSupervisor.h
     include/forge/core/Settings.h
     include/forge/core/TextFileCodec.h
+    include/forge/core/ProjectSearch.h
+    include/forge/core/ExtensionManager.h
+    include/forge/core/ThemeCatalog.h
+    include/forge/core/PackageArchive.h
+    src/ProjectSearch.cpp
+    src/ExtensionManager.cpp
+    src/ThemeCatalog.cpp
+    src/PackageArchive.cpp
     src/ActionManager.cpp
     src/ServiceSupervisor.cpp
     src/RpcClient.cpp
@@ -29,6 +37,8 @@ target_link_libraries(forge_core
         Qt6::Core
         Qt6::Gui
         Qt6::Network
+        Qt6::Concurrent
+        ZLIB::ZLIB
 )
 
 target_compile_features(forge_core PUBLIC cxx_std_20)

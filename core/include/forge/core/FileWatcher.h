@@ -1,6 +1,9 @@
 #pragma once
+#include <QFileSystemWatcher>
 #include <QObject>
+#include <QSet>
 #include <QString>
+#include <QTimer>
 
 namespace forge::core {
 
@@ -15,10 +18,17 @@ class FileWatcher : public QObject {
 public:
     explicit FileWatcher(QObject* parent = nullptr);
     void watchDirectory(const QString& path);
+    void watchFile(const QString& path);
     void unwatchAll();
 signals:
     void fileChanged(const QString& path);
     void directoryChanged(const QString& path);
+
+private:
+    QFileSystemWatcher m_watcher;
+    QTimer m_debounce;
+    QSet<QString> m_files;
+    QSet<QString> m_pending;
 };
 
-} // namespace forge::core
+}  // namespace forge::core
