@@ -45,3 +45,5 @@ Format: `YYYY-MM-DD | Decision | Reason`
 | 2026-10-23 | Declarative VSIX/ZIP imports and Open VSX registry; reject executable plugin hosts | Provide working interoperable themes/snippets/keymaps without falsely claiming JVM/Node extension compatibility |
 | 2026-10-23 | Keep production Qt 6.8/Rust pins; add explicit UI-only build options for local validation | Linux review SDK differs from the user's Windows setup; defaults remain unchanged |
 | 2026-10-23 | Use Visual Studio Developer PowerShell via vswhere in CI and local helper | Avoid the failing third-party MSVC setup action and hard-coded Build Tools paths |
+
+- 2026-10-23: Windows offscreen tests explicitly use the installed Windows font directory. Qt 6.8.3's offscreen plugin uses FreeType; the native system FixedFont alias alone is insufficient there. Prefer installed monospace families for editor fallback and retain the fixed-pitch regression check.

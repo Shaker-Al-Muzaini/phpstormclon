@@ -25,3 +25,9 @@ An AddressSanitizer build found a shutdown callback accessing the terminal view 
 The tests exercise actual keyboard find/save dispatch, replace-all undo, an Arabic filename with CRLF, protection against external overwrites, split-document edits, extension activation/rejection, ZIP validation, background project search and file-watch reattachment. Screenshots are visual evidence only; no startup/index/typing benchmark budget is claimed to have been achieved.
 
 Local result: **27/27 CTest cases passed**, including the real Open VSX One Dark 2.3.0 fixture. The same suite passed with AddressSanitizer enabled (`ASAN_OPTIONS=detect_leaks=0`). Clang-format 19.1.5 and `git diff --check` passed. Graphite/Daylight 100% and Obsidian/RTL 150% native screenshots were captured successfully. Marketplace metadata and the real package download were checked against Open VSX; interactive Windows networking/PowerShell validation remains subject to Windows CI/manual use.
+
+## Hosted Windows verification
+
+The Windows Qt 6.8.3 / MSVC / Rust build succeeded in run [40017935741](https://github.com/Shaker-Al-Muzaini/phpstormclon/actions/runs/40017935741). Rust and dependency-policy/audit jobs passed with the existing documented RSA advisory exception. CTest passed 26/27 cases; the sole failure was fixed-pitch font selection in the offscreen platform.
+
+Qt's Windows offscreen backend uses its FreeType database and `QT_QPA_FONTDIR`, rather than the native Windows font database (Qt 6.8.3 sources: `qoffscreenintegration.cpp`, `qfreetypefontdatabase.cpp`, `qplatformfontdatabase.cpp`). Tests now supply the installed Windows Fonts directory, and the editor chooses an installed mono fallback when the requested family is missing. The font regression assertion remains enabled. The corrected run is pending; a Windows portable artifact is published only after all CTest cases pass.

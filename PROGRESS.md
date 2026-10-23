@@ -2,7 +2,7 @@
 
 ## Status
 
-**Current session: Native workspace redesign — local C++ checks complete; new Windows CI verification pending**
+**Current session: Native workspace redesign — Windows build succeeds; font regression fix awaiting CI**
 **Product milestone: M1 — Shell and Docking (in progress)**
 
 ---
@@ -19,7 +19,7 @@
 - Added file watching and external-overwrite confirmation, atomic settings writes, UTF-8 terminal I/O configuration, and a shutdown lifecycle fix found with AddressSanitizer.
 - Split the former 3,000-line MainWindow file into focused implementation files and reusable widgets. Fixed resource embedding (AUTORCC), which previously prevented the app from loading bundled themes/keymaps.
 - Preserved Windows presets and added `tools/build-local.ps1` with vswhere-based MSVC discovery, CTest/Cargo checks, Qt deployment and portable packaging.
-- Hosted verification fixed the previous MSVC setup failure. Rust checks passed; Windows C++ formatting passed after enforcing source LF endings. The next run exposed missing pinned vcpkg registry history in the runner checkout; the build now fetches that official commit when absent without changing the installed checkout. Final Windows build/test remains pending.
+- Hosted verification fixed the previous MSVC setup failure. Rust checks passed; Windows C++ formatting passed after enforcing source LF endings. The next run exposed missing pinned vcpkg registry history in the runner checkout; the build now fetches that official commit when absent without changing the installed checkout. The full Windows Qt/MSVC/Cargo build then succeeded, with 26/27 CTest cases passing; the remaining fixed-pitch font check exposed the headless plugin's separate font database. Explicit installed mono fallbacks and a Windows font directory for offscreen tests are now included; final rerun is pending.
 - Fixed editor font inheritance so UI styling cannot replace its monospace font; added a fixed-pitch UI regression assertion.
 - Local verification: the C++ workspace builds on Linux Qt 6.4.2 using the explicit UI-only compatibility switches; 27/27 tests passed, including real deflated VSIX import and the startup screenshot test; the suite also passed in an AddressSanitizer build (leak detection disabled for external Qt libraries). Final results are recorded in `docs/WORKSPACE_REDESIGN.md`. Production defaults remain Qt 6.8 / Rust 1.99.1 / MSVC on Windows; new hosted CI is tracked separately.
 - Remaining gaps: Qt built-in docking rather than ADS/auto-hide, one additional editor split rather than arbitrary pane trees, limited declarative extension compatibility, redirected terminal rather than ConPTY, and the existing PHP/Laravel/Git/debugger/database/AI roadmap. No semantic analysis or benchmark budgets are claimed complete.

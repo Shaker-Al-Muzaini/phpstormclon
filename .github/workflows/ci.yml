@@ -120,6 +120,32 @@ jobs:
           Copy-Item docs/WINDOWS.md build/windows-release/bin/RUNNING.md
           Remove-Item build/windows-release/bin/forge*_tests.exe -ErrorAction SilentlyContinue
 
+      - name: Capture native Windows workspace themes
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM = 'offscreen'
+          $env:QT_QPA_FONTDIR = "$env:WINDIR/Fonts"
+          $forgeScreens = 'build/windows-release/bin/screens'
+          New-Item -ItemType Directory -Force $forgeScreens | Out-Null
+          function Capture-ForgeWorkspace($theme, $name, $scale, [switch]$Rtl) {
+            $env:QT_SCALE_FACTOR = "$scale"
+            $forgeArguments = @('--no-splash', '--project', 'tests/fixtures/workspace',
+              '--file', 'tests/fixtures/workspace/app/Http/Controllers/WelcomeController.php',
+              '--theme', $theme, '--screenshot', "$forgeScreens/$name.png")
+            if ($Rtl) { $forgeArguments += '--rtl' }
+            if ($name -eq 'windows-graphite-100') {
+              $forgeArguments += @('--splash-screenshot', "$forgeScreens/startup-brand.png")
+            }
+            & ./build/windows-release/bin/ForgeIDE.exe @forgeArguments
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$forgeScreens/$name.png")) {
+              throw "Workspace screenshot failed: $name"
+            }
+          }
+          Capture-ForgeWorkspace Graphite windows-graphite-100 1
+          Capture-ForgeWorkspace Daylight windows-daylight-100 1
+          Capture-ForgeWorkspace Obsidian windows-obsidian-150 1.5
+          Capture-ForgeWorkspace Graphite windows-graphite-rtl-150 1.5 -Rtl
+
       - name: Upload portable Windows build
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

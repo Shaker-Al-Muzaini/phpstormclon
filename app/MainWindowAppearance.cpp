@@ -277,8 +277,18 @@ void MainWindow::applyEditorTheme(QPlainTextEdit* editor) {
                forge::core::Settings::instance()
                    ->value("editor.fontSize", metrics.value(QStringLiteral("fontSize")).toInt(10))
                    .toInt());
-    if (!QFontDatabase::families().contains(font.family()))
+    const auto families = QFontDatabase::families();
+    if (!families.contains(font.family(), Qt::CaseInsensitive)) {
         font.setFamily(QFontDatabase::systemFont(QFontDatabase::FixedFont).family());
+        const QStringList alternatives = {"Consolas", "Cascadia Mono", "DejaVu Sans Mono",
+                                          "Liberation Mono", "Courier New"};
+        for (const auto& family : alternatives) {
+            if (families.contains(family, Qt::CaseInsensitive)) {
+                font.setFamily(family);
+                break;
+            }
+        }
+    }
     font.setStyleHint(QFont::Monospace);
     font.setFixedPitch(true);
     if (auto* codeEditor = dynamic_cast<ForgeCodeEditor*>(editor)) {

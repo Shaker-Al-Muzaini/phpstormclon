@@ -24,16 +24,24 @@ set_property(TARGET forge_tests PROPERTY CROSSCOMPILING_EMULATOR
     "${CMAKE_COMMAND};-E;env;PATH=$<TARGET_FILE_DIR:Qt6::Core>;QT_QPA_PLATFORM=offscreen"
 )
 
+# The Windows offscreen plugin uses FreeType instead of the native font database.
+set(forge_test_environment
+    "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    "QT_QPA_PLATFORM=set:offscreen")
+if(WIN32)
+    file(TO_CMAKE_PATH "$ENV{WINDIR}/Fonts" forge_test_font_dir)
+    list(APPEND forge_test_environment "QT_QPA_FONTDIR=set:${forge_test_font_dir}")
+endif()
+
 gtest_discover_tests(forge_tests
     DISCOVERY_MODE PRE_TEST
     PROPERTIES ENVIRONMENT_MODIFICATION
-        "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>;QT_QPA_PLATFORM=set:offscreen"
+        "${forge_test_environment}"
 )
 
 add_test(NAME Startup.ResourcesAndScreenCapture
     COMMAND forge_app --no-splash --theme Graphite --screenshot ${CMAKE_CURRENT_BINARY_DIR}/startup.png)
 set_tests_properties(Startup.ResourcesAndScreenCapture PROPERTIES
-    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    ENVIRONMENT_MODIFICATION "${forge_test_environment}"
     TIMEOUT 20)
 target_compile_definitions(forge_tests PRIVATE FORGE_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
