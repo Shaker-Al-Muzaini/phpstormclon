@@ -1,7 +1,7 @@
 {
   "$schema": "forge://keymap/v1",
-  "name": "Default (PhpStorm-compatible)",
-  "description": "PhpStorm-compatible keymap. Key names follow Qt::KeySequence notation.",
+  "name": "Forge Default",
+  "description": "Default IDE shortcuts. Key names follow Qt::KeySequence notation.",
   "license": "Apache-2.0",
   "bindings": {
     "forge.file.new": "Ctrl+N",

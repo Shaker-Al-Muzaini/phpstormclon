@@ -438,21 +438,23 @@ private:
         auto match = expression.globalMatch(text);
         while (match.hasNext()) {
             const auto item = match.next();
-            setFormat(item.capturedStart(), item.capturedLength(), format);
+            setFormat(static_cast<int>(item.capturedStart()),
+                      static_cast<int>(item.capturedLength()), format);
         }
     }
 
     void highlightBlockComment(const QString& text) {
-        int start = previousBlockState() == 1 ? 0 : text.indexOf(QStringLiteral("/*"));
+        qsizetype start = previousBlockState() == 1 ? 0 : text.indexOf(QStringLiteral("/*"));
         while (start >= 0) {
-            const int end = text.indexOf(QStringLiteral("*/"), start);
+            const qsizetype end = text.indexOf(QStringLiteral("*/"), start);
             if (end < 0) {
                 setCurrentBlockState(1);
-                setFormat(start, text.size() - start, m_comment);
+                const int remaining = static_cast<int>(text.size() - start);
+                setFormat(static_cast<int>(start), remaining, m_comment);
                 return;
             }
-            const int length = end - start + 2;
-            setFormat(start, length, m_comment);
+            const qsizetype length = end - start + 2;
+            setFormat(static_cast<int>(start), static_cast<int>(length), m_comment);
             start = text.indexOf(QStringLiteral("/*"), end + 2);
         }
         setCurrentBlockState(0);

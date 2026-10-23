@@ -174,7 +174,7 @@ TEST(KeymapManager, LoadsBundledDefaultKeymapAndAppliesBindings) {
 
     ASSERT_TRUE(keymaps.loadDefaultKeymap());
 
-    EXPECT_EQ(keymaps.activeKeymapName(), QStringLiteral("Default (PhpStorm-compatible)"));
+    EXPECT_EQ(keymaps.activeKeymapName(), QStringLiteral("Forge Default"));
     EXPECT_EQ(saveAction->shortcut().toString(), QStringLiteral("Ctrl+S"));
 }
 

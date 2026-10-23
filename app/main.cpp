@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     // Keep branding readable without blocking workspace initialization or the event loop.
     MainWindow window(&actionManager, &supervisor);
     auto option = [&app](const QString& key) {
-        const int i = app.arguments().indexOf(key);
+        const qsizetype i = app.arguments().indexOf(key);
         return i >= 0 && i + 1 < app.arguments().size() ? app.arguments().at(i + 1) : QString();
     };
     if (!option("--project").isEmpty()) window.openProjectPath(option("--project"));
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
     if (!app.arguments().contains("--no-splash"))
         QTimer::singleShot(650, &splash, [&splash, &window]() { splash.finish(&window); });
     if (app.arguments().contains("--screenshot")) {
-        const int i = app.arguments().indexOf("--screenshot");
+        const qsizetype i = app.arguments().indexOf("--screenshot");
         if (i + 1 < app.arguments().size())
             QTimer::singleShot(700, &window, [&window, &app, i]() {
                 app.exit(window.grab().save(app.arguments().at(i + 1)) ? 0 : 2);

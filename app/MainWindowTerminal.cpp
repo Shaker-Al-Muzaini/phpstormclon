@@ -218,7 +218,7 @@ void MainWindow::submitTerminalCommand(const QString& command, QPlainTextEdit* o
         return;
     }
 
-    const int index = m_terminalViews.indexOf(output);
+    const qsizetype index = m_terminalViews.indexOf(output);
     if (index < 0 || index >= m_terminalProcesses.size()) {
         return;
     }

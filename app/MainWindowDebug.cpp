@@ -102,7 +102,7 @@ void MainWindow::debugCurrentPhpFile() {
                 m_debugTransactionId = 1;
                 connect(socket, &QTcpSocket::readyRead, this, [this, socket]() {
                     m_debugBuffer.append(socket->readAll());
-                    int terminator = -1;
+                    qsizetype terminator = -1;
                     while ((terminator = m_debugBuffer.indexOf('\0')) >= 0) {
                         const QByteArray packet = m_debugBuffer.left(terminator);
                         m_debugBuffer.remove(0, terminator + 1);

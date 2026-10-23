@@ -237,7 +237,7 @@ void MainWindow::editLine(const QString& operation) {
             auto b = editor->document()->findBlockByNumber(line);
             const auto t = b.text();
             const int offset = static_cast<int>(t.size() - t.trimmed().size());
-            const int pos = t.indexOf(QRegularExpression("\\S"));
+            const int pos = static_cast<int>(t.indexOf(QRegularExpression("\\S")));
             if (pos < 0) continue;
             cursor.setPosition(b.position() + pos);
             if (t.mid(pos).startsWith(marker)) {
