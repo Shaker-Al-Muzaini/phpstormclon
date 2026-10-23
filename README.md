@@ -145,8 +145,8 @@ Apache-2.0. See [LICENSE](LICENSE).
 
 Third-party licenses: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (generated in CI).
 
-Fonts bundled: JetBrains Mono (SIL OFL), Inter (SIL OFL).
-Icons: Lucide (ISC) + original SVGs.
+Preferred fonts: JetBrains Mono and Inter when installed locally; font files are not currently bundled.
+Icons and startup artwork: original project QPainter glyphs; third-party icon sets remain planned.
 
 ## Contributing
 

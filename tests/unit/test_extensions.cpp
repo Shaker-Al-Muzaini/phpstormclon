@@ -67,9 +67,10 @@ QByteArray zip(const QByteArray& name, const QByteArray& body) {
 }
 }  // namespace
 TEST(ThemeCatalog, JsonCommentsPreserveStringsAndAllowTrailingCommas) {
-    const auto bytes =
-        forge::core::ThemeCatalog::stripJsonComments(R"({"url":"https://example.test/a/*b*/",// note
-        "values":["a,}",],/* note */})");
+    const QByteArray source = R"({"url":"https://example.test/a/*b*/",// note)"
+                              "\n"
+                              R"("values":["a,}",],/* note */})";
+    const auto bytes = forge::core::ThemeCatalog::stripJsonComments(source);
     const auto object = QJsonDocument::fromJson(bytes).object();
     EXPECT_EQ(object.value("url").toString(), "https://example.test/a/*b*/");
     EXPECT_EQ(object.value("values").toArray().size(), 1);
