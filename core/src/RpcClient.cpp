@@ -1,10 +1,10 @@
 #include "forge/core/RpcClient.h"
 
+#include <cmath>
+#include <limits>
 #include <QDebug>
 #include <QJsonParseError>
 #include <QJsonValue>
-#include <cmath>
-#include <limits>
 
 namespace forge::core {
 
@@ -14,12 +14,11 @@ RpcClient::RpcClient(QProcess* serviceProcess, QObject* parent)
     connect(m_process, &QProcess::readyReadStandardOutput, this, &RpcClient::onReadyRead);
     connect(m_process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
             [this](int, QProcess::ExitStatus) { onProcessEnded(); });
-    connect(m_process, &QProcess::errorOccurred, this,
-            [this](QProcess::ProcessError error) {
-                if (error == QProcess::FailedToStart || error == QProcess::Crashed) {
-                    onProcessEnded();
-                }
-            });
+    connect(m_process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart || error == QProcess::Crashed) {
+            onProcessEnded();
+        }
+    });
 }
 
 int RpcClient::sendRequest(const QString& method, const QJsonObject& params,
@@ -114,9 +113,8 @@ void RpcClient::processBuffer() {
         for (const QByteArray& line : header.split('\n')) {
             const QByteArray trimmed = line.trimmed();
             const qsizetype colon = trimmed.indexOf(':');
-            if (colon >= 0 &&
-                trimmed.first(colon).trimmed().compare(QByteArrayLiteral("Content-Length"),
-                                                       Qt::CaseInsensitive) == 0) {
+            if (colon >= 0 && trimmed.first(colon).trimmed().compare(
+                                  QByteArrayLiteral("Content-Length"), Qt::CaseInsensitive) == 0) {
                 if (foundContentLength) {
                     invalidContentLength = true;
                     break;
@@ -130,9 +128,8 @@ void RpcClient::processBuffer() {
 
         if (!foundContentLength || invalidContentLength || contentLength <= 0 ||
             contentLength > kMaxFrameBytes) {
-            const QString error =
-                QStringLiteral("Invalid or oversized JSON-RPC Content-Length: %1")
-                    .arg(contentLength);
+            const QString error = QStringLiteral("Invalid or oversized JSON-RPC Content-Length: %1")
+                                      .arg(contentLength);
             qWarning() << "[RpcClient]" << error;
             m_readBuffer.clear();
             emit protocolError(error);
@@ -164,8 +161,8 @@ void RpcClient::dispatchMessage(const QByteArray& json) {
     QJsonParseError parseError;
     const QJsonDocument document = QJsonDocument::fromJson(json, &parseError);
     if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
-        const QString error = QStringLiteral("Invalid JSON-RPC JSON body: %1")
-                                  .arg(parseError.errorString());
+        const QString error =
+            QStringLiteral("Invalid JSON-RPC JSON body: %1").arg(parseError.errorString());
         qWarning() << "[RpcClient]" << error;
         emit protocolError(error);
         failPending(error);
@@ -224,14 +221,12 @@ void RpcClient::dispatchMessage(const QByteArray& json) {
     }
 
     const QString method = object.value(QStringLiteral("method")).toString();
-    if (method.isEmpty() ||
-        (object.contains(QStringLiteral("params")) &&
-         !object.value(QStringLiteral("params")).isObject())) {
+    if (method.isEmpty() || (object.contains(QStringLiteral("params")) &&
+                             !object.value(QStringLiteral("params")).isObject())) {
         rejectMessage(QStringLiteral("Malformed JSON-RPC notification."));
         return;
     }
-    emit notificationReceived(method,
-                              object.value(QStringLiteral("params")).toObject());
+    emit notificationReceived(method, object.value(QStringLiteral("params")).toObject());
 }
 
 QByteArray RpcClient::encodeMessage(const QJsonObject& object) const {
@@ -256,8 +251,7 @@ void RpcClient::failPending(const QString& reason) {
     m_pending.clear();
     for (const ResponseCallback& callback : pending) {
         if (callback) {
-            callback({}, {{QStringLiteral("code"), -32000},
-                          {QStringLiteral("message"), reason}});
+            callback({}, {{QStringLiteral("code"), -32000}, {QStringLiteral("message"), reason}});
         }
     }
 }

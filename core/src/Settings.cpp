@@ -1,29 +1,31 @@
 #include "forge/core/Settings.h"
-#include <QStandardPaths>
+
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
-#include <QDebug>
+#include <QSaveFile>
+#include <QStandardPaths>
 
 namespace forge::core {
 
 Settings* Settings::s_instance = nullptr;
 
-Settings::Settings(QObject* parent)
-    : QObject(parent)
-{
+Settings::Settings(QObject* parent) : QObject(parent) {
     Q_ASSERT(!s_instance);
     s_instance = this;
     load();
 }
 
-Settings* Settings::instance()
-{
+Settings::~Settings() {
+    s_instance = nullptr;
+}
+
+Settings* Settings::instance() {
     return s_instance;
 }
 
-QVariant Settings::value(const QString& key, const QVariant& defaultValue) const
-{
+QVariant Settings::value(const QString& key, const QVariant& defaultValue) const {
     if (m_project.contains(key)) {
         return m_project.value(key).toVariant();
     }
@@ -33,28 +35,29 @@ QVariant Settings::value(const QString& key, const QVariant& defaultValue) const
     return defaultValue;
 }
 
-void Settings::setValue(const QString& key, const QVariant& value)
-{
+void Settings::setValue(const QString& key, const QVariant& value) {
     m_global[key] = QJsonValue::fromVariant(value);
     emit settingChanged(key, value);
 }
 
-void Settings::save()
-{
+void Settings::save() {
     const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(dir);
     const QString path = dir + QStringLiteral("/settings.json");
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "[Settings] Cannot write settings to" << path;
         return;
     }
-    file.write(QJsonDocument(m_global).toJson());
+    const auto bytes = QJsonDocument(m_global).toJson();
+    if (file.write(bytes) != bytes.size() || !file.commit()) {
+        qWarning() << "[Settings] Could not save settings atomically:" << file.errorString();
+        return;
+    }
     qDebug() << "[Settings] Saved to" << path;
 }
 
-void Settings::load()
-{
+void Settings::load() {
     const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     const QString path = dir + QStringLiteral("/settings.json");
     QFile file(path);
@@ -72,4 +75,4 @@ void Settings::load()
     qDebug() << "[Settings] Loaded from" << path;
 }
 
-} // namespace forge::core
+}  // namespace forge::core

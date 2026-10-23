@@ -18,6 +18,7 @@
 #include <QMainWindow>
 #include <QPlainTextEdit>
 #include <QProcess>
+#include <QStandardPaths>
 #include <QString>
 #include <QThread>
 #include <QTimer>
@@ -121,6 +122,8 @@ int main(int argc, char** argv) {
         return runChildFixture(QString::fromLocal8Bit(argv[1]));
     }
 
+    QStandardPaths::setTestModeEnabled(true);
+    QCoreApplication::setApplicationName("ForgeTests");
     Q_INIT_RESOURCE(resources);
     QApplication application(argc, argv);
     Q_UNUSED(application);

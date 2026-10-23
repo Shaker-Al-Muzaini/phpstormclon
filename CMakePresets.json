@@ -1,6 +1,10 @@
 {
     "version": 6,
-    "cmakeMinimumRequired": { "major": 3, "minor": 22, "patch": 0 },
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 22,
+        "patch": 0
+    },
     "configurePresets": [
         {
             "name": "base",
@@ -21,8 +25,8 @@
             "displayName": "Windows Debug (MSVC)",
             "inherits": "base",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE":   "Debug",
-                "CMAKE_C_COMPILER":   "cl",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "cl",
                 "CMAKE_CXX_COMPILER": "cl"
             }
         },
@@ -31,8 +35,8 @@
             "displayName": "Windows Release (MSVC)",
             "inherits": "base",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE":   "Release",
-                "CMAKE_C_COMPILER":   "cl",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "cl",
                 "CMAKE_CXX_COMPILER": "cl"
             }
         }
@@ -55,7 +59,16 @@
         {
             "name": "windows-debug",
             "configurePreset": "windows-debug",
-            "output": { "verbosity": "verbose" }
+            "output": {
+                "verbosity": "verbose"
+            }
+        },
+        {
+            "name": "windows-release",
+            "configurePreset": "windows-release",
+            "output": {
+                "outputOnFailure": true
+            }
         }
     ]
 }

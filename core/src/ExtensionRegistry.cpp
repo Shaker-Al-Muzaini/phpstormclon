@@ -1,11 +1,10 @@
 #include "forge/core/ExtensionRegistry.h"
+
 #include <QDebug>
 
 namespace forge::core {
 
-ExtensionRegistry::ExtensionRegistry(QObject* parent)
-    : QObject(parent)
-{
+ExtensionRegistry::ExtensionRegistry(QObject* parent) : QObject(parent) {
     // Declare all standard extension points from spec §9
     const QStringList builtIn = {
         QStringLiteral("forge.language"),
@@ -33,38 +32,34 @@ ExtensionRegistry::ExtensionRegistry(QObject* parent)
     }
 }
 
-void ExtensionRegistry::declarePoint(const QString& pointId, const QString& description)
-{
+void ExtensionRegistry::declarePoint(const QString& pointId, const QString& description) {
     if (!m_points.contains(pointId)) {
         m_points.insert(pointId, description);
         qDebug() << "[ExtensionRegistry] Declared point:" << pointId;
     }
 }
 
-int ExtensionRegistry::registerExtension(const QString& pointId, QObject* impl)
-{
+int ExtensionRegistry::registerExtension(const QString& pointId, QObject* impl) {
     if (!m_points.contains(pointId)) {
         qWarning() << "[ExtensionRegistry] Unknown extension point:" << pointId;
         return -1;
     }
     const int handle = m_nextHandle++;
-    m_extensions.append({ handle, pointId, impl });
+    m_extensions.append({handle, pointId, impl});
     qDebug() << "[ExtensionRegistry] Registered extension for" << pointId << "handle:" << handle;
     return handle;
 }
 
-void ExtensionRegistry::unregisterExtension(int handle)
-{
+void ExtensionRegistry::unregisterExtension(int handle) {
     const auto it = std::find_if(m_extensions.begin(), m_extensions.end(),
-                                  [handle](const Entry& e) { return e.handle == handle; });
+                                 [handle](const Entry& e) { return e.handle == handle; });
     if (it != m_extensions.end()) {
         qDebug() << "[ExtensionRegistry] Unregistered handle:" << handle;
         m_extensions.erase(it);
     }
 }
 
-QList<QObject*> ExtensionRegistry::extensions(const QString& pointId) const
-{
+QList<QObject*> ExtensionRegistry::extensions(const QString& pointId) const {
     QList<QObject*> result;
     for (const auto& e : m_extensions) {
         if (e.pointId == pointId) result.append(e.impl);
@@ -72,9 +67,8 @@ QList<QObject*> ExtensionRegistry::extensions(const QString& pointId) const
     return result;
 }
 
-QStringList ExtensionRegistry::declaredPoints() const
-{
+QStringList ExtensionRegistry::declaredPoints() const {
     return m_points.keys();
 }
 
-} // namespace forge::core
+}  // namespace forge::core

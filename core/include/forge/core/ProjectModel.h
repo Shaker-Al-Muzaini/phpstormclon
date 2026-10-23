@@ -1,8 +1,8 @@
 #pragma once
+#include <QDir>
 #include <QObject>
 #include <QString>
 #include <QStringList>
-#include <QDir>
 
 namespace forge::core {
 
@@ -22,9 +22,9 @@ public:
     /// Close the current project.
     void close();
 
-    bool     isOpen()      const;
-    QString  rootPath()    const;
-    QString  displayName() const;
+    bool isOpen() const;
+    QString rootPath() const;
+    QString displayName() const;
 
 signals:
     void projectOpened(const QString& rootPath);
@@ -32,7 +32,7 @@ signals:
 
 private:
     QString m_rootPath;
-    bool    m_isOpen = false;
+    bool m_isOpen = false;
 };
 
-} // namespace forge::core
+}  // namespace forge::core

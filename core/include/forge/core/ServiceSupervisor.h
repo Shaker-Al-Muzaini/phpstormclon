@@ -1,11 +1,11 @@
 #pragma once
+#include <memory>
+#include <QFile>
+#include <QHash>
 #include <QObject>
 #include <QProcess>
-#include <QTimer>
 #include <QString>
-#include <QHash>
-#include <QFile>
-#include <memory>
+#include <QTimer>
 
 namespace forge::core {
 
@@ -22,12 +22,12 @@ class ServiceSupervisor : public QObject {
     Q_OBJECT
 public:
     struct ServiceConfig {
-        QString key;             ///< Unique identifier (e.g. "phpintel")
-        QString executable;      ///< Absolute path to the service binary
-        QStringList arguments;   ///< Command-line arguments
-        int maxRestarts  = 5;    ///< Give up after this many rapid crashes
-        int backoffMs    = 500;  ///< Initial restart delay (doubles each attempt)
-        int healthyUptimeMs = 60000; ///< Reset crash backoff after healthy uptime
+        QString key;                  ///< Unique identifier (e.g. "phpintel")
+        QString executable;           ///< Absolute path to the service binary
+        QStringList arguments;        ///< Command-line arguments
+        int maxRestarts = 5;          ///< Give up after this many rapid crashes
+        int backoffMs = 500;          ///< Initial restart delay (doubles each attempt)
+        int healthyUptimeMs = 60000;  ///< Reset crash backoff after healthy uptime
     };
 
     enum class ServiceState { Stopped, Starting, Running, Crashed, Disabled };
@@ -62,16 +62,16 @@ private slots:
 
 private:
     struct Entry {
-        ServiceConfig  config;
-        QProcess*      process       = nullptr;
-        ServiceState   state         = ServiceState::Stopped;
-        int            restartCount  = 0;
-        int            currentBackMs = 0;
-        QTimer*        restartTimer  = nullptr;
-        QTimer*        healthyTimer = nullptr;
-        QTimer*        terminateTimer = nullptr;
-        QTimer*        killTimer = nullptr;
-        QFile*         stderrLog = nullptr;
+        ServiceConfig config;
+        QProcess* process = nullptr;
+        ServiceState state = ServiceState::Stopped;
+        int restartCount = 0;
+        int currentBackMs = 0;
+        QTimer* restartTimer = nullptr;
+        QTimer* healthyTimer = nullptr;
+        QTimer* terminateTimer = nullptr;
+        QTimer* killTimer = nullptr;
+        QFile* stderrLog = nullptr;
     };
 
     void startProcess(Entry& entry);
@@ -82,4 +82,4 @@ private:
     QHash<QString, Entry> m_entries;
 };
 
-} // namespace forge::core
+}  // namespace forge::core

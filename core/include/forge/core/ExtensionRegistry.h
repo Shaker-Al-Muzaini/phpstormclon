@@ -1,10 +1,10 @@
 #pragma once
-#include <QObject>
-#include <QString>
-#include <QHash>
-#include <QList>
 #include <functional>
 #include <memory>
+#include <QHash>
+#include <QList>
+#include <QObject>
+#include <QString>
 
 namespace forge::core {
 
@@ -40,14 +40,14 @@ public:
 
 private:
     struct Entry {
-        int      handle;
-        QString  pointId;
+        int handle;
+        QString pointId;
         QObject* impl;
     };
 
-    QHash<QString, QString>  m_points;     // pointId -> description
-    QList<Entry>             m_extensions;
-    int                      m_nextHandle = 1;
+    QHash<QString, QString> m_points;  // pointId -> description
+    QList<Entry> m_extensions;
+    int m_nextHandle = 1;
 };
 
-} // namespace forge::core
+}  // namespace forge::core

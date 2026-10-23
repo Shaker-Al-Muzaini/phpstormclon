@@ -10,8 +10,7 @@ namespace forge::core {
 namespace {
 
 QByteArray shutdownNotification() {
-    const QByteArray body =
-        QByteArrayLiteral("{\"jsonrpc\":\"2.0\",\"method\":\"$/shutdown\"}");
+    const QByteArray body = QByteArrayLiteral("{\"jsonrpc\":\"2.0\",\"method\":\"$/shutdown\"}");
     return QByteArrayLiteral("Content-Length: ") + QByteArray::number(body.size()) +
            QByteArrayLiteral("\r\n\r\n") + body;
 }
@@ -79,8 +78,7 @@ void ServiceSupervisor::stopService(const QString& key) {
             connect(entry.terminateTimer, &QTimer::timeout, this, [this, key]() {
                 auto service = m_entries.find(key);
                 if (service == m_entries.end() || service->state != ServiceState::Stopped ||
-                    !service->process ||
-                    service->process->state() == QProcess::NotRunning) {
+                    !service->process || service->process->state() == QProcess::NotRunning) {
                     return;
                 }
                 service->process->terminate();
@@ -91,8 +89,7 @@ void ServiceSupervisor::stopService(const QString& key) {
             connect(entry.killTimer, &QTimer::timeout, this, [this, key]() {
                 auto service = m_entries.find(key);
                 if (service != m_entries.end() && service->state == ServiceState::Stopped &&
-                    service->process &&
-                    service->process->state() != QProcess::NotRunning) {
+                    service->process && service->process->state() != QProcess::NotRunning) {
                     service->process->kill();
                 }
             });
@@ -188,8 +185,9 @@ void ServiceSupervisor::startProcess(Entry& entry) {
             }
             const QByteArray stderrBytes = service->process->readAllStandardError();
             if (!stderrBytes.isEmpty()) {
-                qWarning().noquote() << QStringLiteral("[%1 stderr] %2")
-                                            .arg(key, QString::fromLocal8Bit(stderrBytes).trimmed());
+                qWarning().noquote()
+                    << QStringLiteral("[%1 stderr] %2")
+                           .arg(key, QString::fromLocal8Bit(stderrBytes).trimmed());
                 if (service->stderrLog) {
                     if (service->stderrLog->write(stderrBytes) != stderrBytes.size()) {
                         qWarning() << "[ServiceSupervisor] Could not write stderr log for" << key
@@ -280,8 +278,8 @@ void ServiceSupervisor::onProcessFinished(const QString& key, int exitCode,
         return;
     }
 
-    qWarning() << "[ServiceSupervisor] Service" << key << "exited with code" << exitCode
-               << "status" << static_cast<int>(status);
+    qWarning() << "[ServiceSupervisor] Service" << key << "exited with code" << exitCode << "status"
+               << static_cast<int>(status);
     entry.state = ServiceState::Crashed;
     emit serviceCrashed(key, exitCode);
     emit serviceStateChanged(key, entry.state);

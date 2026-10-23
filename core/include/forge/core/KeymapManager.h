@@ -1,8 +1,8 @@
 #pragma once
-#include <QObject>
 #include <QHash>
-#include <QString>
 #include <QJsonObject>
+#include <QObject>
+#include <QString>
 
 namespace forge::core {
 
@@ -42,7 +42,7 @@ private:
     bool applyBindings(const QHash<QString, QString>& bindings);
 
     ActionManager* m_actionManager;
-    QString        m_activeKeymapName;
+    QString m_activeKeymapName;
 };
 
-} // namespace forge::core
+}  // namespace forge::core

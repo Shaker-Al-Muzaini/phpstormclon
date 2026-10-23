@@ -12,6 +12,7 @@
 namespace forge::core {
 namespace {
 
+#ifdef Q_OS_WIN
 bool decodeCodePage(const QByteArray& bytes, UINT codePage, QString* text) {
     if (bytes.isEmpty()) {
         text->clear();
@@ -60,6 +61,8 @@ bool encodeCodePage(const QString& text, UINT codePage, QByteArray* bytes) {
     }
     return true;
 }
+
+#endif
 
 bool isArabicText(const QString& text) {
     int arabicCharacters = 0;
