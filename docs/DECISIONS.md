@@ -15,6 +15,7 @@ Format: `YYYY-MM-DD | Decision | Reason`
 | 2026-10-21 | tree-sitter-php v0.25.1 | Latest stable PHP grammar for tree-sitter |
 | 2026-10-21 | vcpkg manifest mode | Reproducible, version-locked C++ dependencies per-project |
 | 2026-10-22 | vcpkg builtin baseline `67972e92edd181d433927b42d8ab4bfa52ac164a` | Pin manifest dependency resolution to an official vcpkg repository revision; the bundled vcpkg binary version hash is not a registry commit |
+| 2026-10-23 | Fetch missing pinned vcpkg history before configuration | Hosted Windows checkout lacked the baseline object. Verify `versions/baseline.json`, fetch the exact commit from the official registry only when absent; do not reset or replace the user's installed checkout. |
 | 2026-10-21 | nlohmann/json via vcpkg | Header-only, MIT license, used for settings/theme JSON in C++ |
 | 2026-10-21 | spdlog via vcpkg | Fast, MIT-licensed C++ logging; integrates with Qt logging categories |
 | 2026-10-21 | JetBrains Mono as default editor font | SIL OFL licensed; best-in-class coding legibility; official open alternative |

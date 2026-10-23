@@ -12,6 +12,7 @@ Push-Location $forgeRoot
 try {
     & (Join-Path $PSScriptRoot 'msvc-env.ps1')
     if (-not $QtRoot) { $QtRoot = $env:QT_ROOT_DIR }
+    if (-not $QtRoot) { $QtRoot = $env:QT_ROOT }
     if (-not $QtRoot -and $env:Qt6_DIR) {
         if (Test-Path (Join-Path $env:Qt6_DIR 'bin\qmake.exe')) { $QtRoot = $env:Qt6_DIR }
         else { $QtRoot = [IO.Path]::GetFullPath((Join-Path $env:Qt6_DIR '..\..\..')) }
@@ -28,6 +29,7 @@ try {
         & $Executable @Arguments
         if ($LASTEXITCODE -ne 0) { throw "$Executable failed with exit code $LASTEXITCODE" }
     }
+    & (Join-Path $PSScriptRoot 'ensure-vcpkg-baseline.ps1')
     Invoke-ForgeStep 'cmake' @('--preset', $forgePreset, "-DCMAKE_PREFIX_PATH=$QtRoot")
     Invoke-ForgeStep 'cmake' @('--build', '--preset', $forgePreset, '--parallel', "$Jobs")
     Invoke-ForgeStep 'ctest' @('--preset', $forgePreset, '--output-on-failure')

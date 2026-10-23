@@ -1,4 +1,5 @@
 #include <QCheckBox>
+#include <QFontDatabase>
 #include <QPalette>
 #include <QSpinBox>
 #include <QTreeWidget>
@@ -47,7 +48,8 @@ void MainWindow::applyTheme(const QString& name) {
     const int iconSize = metrics.value(QStringLiteral("iconSize")).toInt(16);
     const QString style =
         QStringLiteral(
-            "QWidget { background: %1; color: %2; font-family: \"%3\"; font-size: %4pt; }"
+            "QWidget { background: %1; color: %2; }"
+            "QMainWindow, QDialog { font-family: \"%3\"; font-size: %4pt; }"
             "QMenuBar, QToolBar, QDockWidget::title { background: %5; }"
             "QMenuBar::item { padding: 4px 6px; }"
             "QToolBar { spacing: 3px; padding: 2px; border: 0; }"
@@ -83,6 +85,7 @@ void MainWindow::applyTheme(const QString& name) {
             .arg(elevated, selection, border, panel, selection, accent,
                  themedColor(ui, QStringLiteral("statusBar"), elevated),
                  themedColor(ui, QStringLiteral("statusBarForeground"), muted));
+    qApp->setFont(QFont(fontFamily, fontSize));
     qApp->setStyleSheet(style);
     for (QPlainTextEdit* editor : findChildren<QPlainTextEdit*>()) {
         if (editor->property("forgeSourceEditor").toBool()) {
@@ -270,11 +273,14 @@ void MainWindow::applyEditorTheme(QPlainTextEdit* editor) {
     editor->setLineWrapMode(forge::core::Settings::instance()->value("editor.wrap", false).toBool()
                                 ? QPlainTextEdit::WidgetWidth
                                 : QPlainTextEdit::NoWrap);
-    const QFont font(
-        metrics.value(QStringLiteral("fontFamily")).toString(QStringLiteral("Consolas")),
-        forge::core::Settings::instance()
-            ->value("editor.fontSize", metrics.value(QStringLiteral("fontSize")).toInt(10))
-            .toInt());
+    QFont font(metrics.value(QStringLiteral("fontFamily")).toString(QStringLiteral("Consolas")),
+               forge::core::Settings::instance()
+                   ->value("editor.fontSize", metrics.value(QStringLiteral("fontSize")).toInt(10))
+                   .toInt());
+    if (!QFontDatabase::families().contains(font.family()))
+        font.setFamily(QFontDatabase::systemFont(QFontDatabase::FixedFont).family());
+    font.setStyleHint(QFont::Monospace);
+    font.setFixedPitch(true);
     if (auto* codeEditor = dynamic_cast<ForgeCodeEditor*>(editor)) {
         codeEditor->setThemeFont(font);
     } else {

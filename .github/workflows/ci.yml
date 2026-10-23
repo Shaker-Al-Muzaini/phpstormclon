@@ -98,6 +98,8 @@ jobs:
           if (-not $env:VCPKG_INSTALLATION_ROOT) {
             throw "VCPKG_INSTALLATION_ROOT is not configured on the Windows runner"
           }
+          $env:VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
+          ./tools/ensure-vcpkg-baseline.ps1
           "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
       - name: Configure CMake

@@ -11,7 +11,7 @@ git switch codex/native-workspace-redesign
 powershell -File .\tools\build-local.ps1 -QtRoot 'C:\Qt\6.8.3\msvc2022_64' -Run
 ```
 
-Use your actual Qt directory. The script can also discover an existing Qt 6.8 installation under `C:\Qt`, or use `QT_ROOT_DIR` / `Qt6_DIR` in the current shell. Visual Studio Community, Professional, Enterprise and Build Tools are discovered using `vswhere`; the script does not assume a Build Tools-only path.
+Use your actual Qt directory. The script can also discover an existing Qt 6.8 installation under `C:\Qt`, or use `QT_ROOT_DIR` / `QT_ROOT` / `Qt6_DIR` in the current shell. Visual Studio Community, Professional, Enterprise and Build Tools are discovered using `vswhere`; the script does not assume a Build Tools-only path.
 
 The script configures the existing preset, builds the C++ app and Rust services, runs CTest and Cargo tests, copies Qt runtime DLLs/plugins with the existing `windeployqt`, and optionally launches the application. The Rust `phpintel` executable is copied beside the app by CMake. It does not install or upgrade system tools. Errors stop the script before launch.
 
@@ -20,7 +20,7 @@ The script configures the existing preset, builds the C++ app and Rust services,
 powershell -File .\tools\build-local.ps1 -QtRoot 'C:\Qt\6.8.3\msvc2022_64' -Configuration Release -Package
 ```
 
-The build needs the existing Qt/MSVC/Rust/Ninja tools, Git, and vcpkg. `zlib` is the only added native package; vcpkg resolves it through the existing pinned baseline. CMake's default Rust integration remains enabled. First-time dependency resolution requires internet access; subsequent cached builds can be offline.
+The build needs the existing Qt/MSVC/Rust/Ninja tools, Git, and vcpkg. `zlib` is the only added native package; vcpkg resolves it through the existing pinned baseline. If the installed vcpkg checkout lacks that commit, the script fetches official registry history without checking out, resetting or cleaning the installed toolchain. CMake's default Rust integration remains enabled. First-time dependency resolution requires internet access; subsequent cached builds can be offline.
 
 The GitHub Actions **ForgeIDE-windows-x64** artifact contains the app, Qt runtime, service executable and notices after a successful Windows build. This is a portable development build, not an MSI installer or a claim that the full language engine is complete.
 

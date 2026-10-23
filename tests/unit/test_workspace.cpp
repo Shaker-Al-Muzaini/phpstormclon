@@ -4,6 +4,7 @@
 #include <QCryptographicHash>
 #include <QDockWidget>
 #include <QFile>
+#include <QFontInfo>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -57,6 +58,7 @@ TEST(Workspace, OpensArabicPathPreservesCrLfAndSavesUsingKeyboardShortcut) {
     auto* editor = workspace.window.findChild<QTabWidget*>("EditorTabs")->currentWidget();
     auto* text = qobject_cast<QPlainTextEdit*>(editor);
     ASSERT_NE(text, nullptr);
+    EXPECT_TRUE(QFontInfo(text->font()).fixedPitch());
     text->setFocus();
     text->moveCursor(QTextCursor::End);
     text->insertPlainText("// appended");
