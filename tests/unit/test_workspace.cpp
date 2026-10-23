@@ -5,6 +5,7 @@
 #include <QDockWidget>
 #include <QFile>
 #include <QFontInfo>
+#include <QFontMetricsF>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -58,7 +59,10 @@ TEST(Workspace, OpensArabicPathPreservesCrLfAndSavesUsingKeyboardShortcut) {
     auto* editor = workspace.window.findChild<QTabWidget*>("EditorTabs")->currentWidget();
     auto* text = qobject_cast<QPlainTextEdit*>(editor);
     ASSERT_NE(text, nullptr);
-    EXPECT_TRUE(QFontInfo(text->font()).fixedPitch());
+    const QFontMetricsF metrics(text->font());
+    EXPECT_GT(metrics.horizontalAdvance("MMMM"), 0);
+    EXPECT_NEAR(metrics.horizontalAdvance("iiii"), metrics.horizontalAdvance("WWWW"), 0.1)
+        << "Resolved editor font: " << QFontInfo(text->font()).family().toStdString();
     text->setFocus();
     text->moveCursor(QTextCursor::End);
     text->insertPlainText("// appended");

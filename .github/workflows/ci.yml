@@ -105,6 +105,13 @@ jobs:
       - name: Configure CMake
         run: cmake --preset windows-release "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR"
 
+      - name: Build and verify editor font regression
+        run: |
+          cmake --build build/windows-release --config Release --target forge_tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --preset windows-release -R Workspace.OpensArabicPath --output-on-failure
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Build
         run: cmake --build build/windows-release --config Release
 
