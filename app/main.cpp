@@ -16,8 +16,8 @@
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
-#include <QIcon>
 #include <QDir>
+#include <QIcon>
 #include <QStandardPaths>
 #include <QDebug>
 

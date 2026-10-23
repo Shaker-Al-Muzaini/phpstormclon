@@ -5,7 +5,11 @@
 [![CI](https://github.com/forge-ide/forge-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/forge-ide/forge-ide/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-> **Status:** Milestone 0 — Foundation. Active development.
+> **Status:** Milestone 1 — IDE shell in progress. The current build can browse a project and edit basic text files; PHP/Laravel intelligence and the full editor are not implemented yet. See [PROGRESS.md](PROGRESS.md).
+
+The Terminal tool window currently runs basic commands in a redirected PowerShell session
+from the open project directory (including commands such as `ls`). Full ConPTY emulation and
+interactive terminal applications remain planned for M6.
 
 ---
 
@@ -15,8 +19,8 @@ Forge IDE aims to deliver PhpStorm-level PHP and Laravel development capabilitie
 fully open, native Windows application. It is designed from the ground up for speed:
 
 - **UI**: C++20 + Qt 6.8 LTS with Qt Widgets (not QML) — instant startup, fluid scrolling
-- **Analysis**: Rust service `phpintel` — tree-sitter parsing, incremental semantic index,
-  real type inference, and completion without requiring a running PHP process
+- **Analysis**: Rust service `phpintel` — currently a JSON-RPC foundation with ping and
+  lifecycle handling; parsing, semantic indexing, type inference, and completion are planned
 - **Protocol**: JSON-RPC 2.0 over stdio (LSP 3.17-compatible) — the analyzer can be used
   from other editors too
 - **Services**: Separate Rust processes for Git (`vcs`), Xdebug (`dbgp`), database

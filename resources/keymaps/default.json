@@ -24,6 +24,9 @@
     "forge.edit.moveLineDown":      "Alt+Shift+Down",
     "forge.edit.extendSelection":   "Ctrl+W",
     "forge.edit.shrinkSelection":   "Ctrl+Shift+W",
+    "forge.navigate.find":                   "Ctrl+F",
+    "forge.navigate.findNext":               "F3",
+    "forge.navigate.goToLine":               "Ctrl+G",
     "forge.navigate.searchEverywhere":        "Shift Shift",
     "forge.navigate.goToFile":               "Ctrl+Shift+N",
     "forge.navigate.goToClass":              "Ctrl+N",
@@ -52,6 +55,7 @@
     "forge.refactor.inline":                 "Ctrl+Alt+N",
     "forge.run.run":                         "Shift+F10",
     "forge.run.debug":                       "Shift+F9",
+    "forge.run.profile":                     "Alt+Shift+F10",
     "forge.run.stop":                        "Ctrl+F2",
     "forge.debug.stepOver":                  "F8",
     "forge.debug.stepInto":                  "F7",
@@ -61,9 +65,11 @@
     "forge.vcs.push":                        "Ctrl+Shift+K",
     "forge.vcs.update":                      "Ctrl+T",
     "forge.window.settings":                 "Ctrl+Alt+S",
+    "forge.window.plugins":                  "Ctrl+Alt+Shift+P",
     "forge.window.projectTree":              "Alt+1",
     "forge.window.terminal":                 "Alt+F12",
-    "forge.window.problems":                 "Alt+6",
-    "forge.window.structure":                "Alt+7"
+    "forge.terminal.clear":                  "Ctrl+L",
+    "forge.terminal.copy":                   "Ctrl+Shift+C",
+    "forge.terminal.paste":                  "Ctrl+Shift+V"
   }
 }

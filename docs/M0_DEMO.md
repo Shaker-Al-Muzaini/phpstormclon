@@ -1,5 +1,8 @@
 # M0 Demo: Windows Foundation
 
+This page records the original M0 smoke test. For the current M1 shell walkthrough, see
+[M1_DEMO.md](M1_DEMO.md).
+
 From a Visual Studio 2022 x64 developer shell with Qt 6.8 and vcpkg available:
 
 ```powershell

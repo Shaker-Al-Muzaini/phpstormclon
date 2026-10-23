@@ -115,7 +115,11 @@ This file mirrors the milestone plan from the master specification.
 ## M8 — Laravel Plugin + v0.1.0 Release ⏳
 - Plugin system complete (manifest loading, DLL loading, extension point registry)
 - `laravel` plugin: routes, Blade, Eloquent, config/env, facades, artisan wizards
+- `symfony` plugin: route/controller navigation, service-container lookup, Twig navigation,
+  Doctrine entity/migration awareness, config/env completion, and Console command discovery
 - Migrations → schema → Eloquent completion chain
+- Framework features are implemented through the public plugin SDK and tested against Laravel
+  and Symfony fixture projects; unsupported framework APIs remain documented
 - Testing integration: PHPUnit/Pest via plugin
 - Composer plugin UI
 - Docker plugin
@@ -133,6 +137,8 @@ This file mirrors the milestone plan from the master specification.
 - All refactorings: preview dialog + single-step undo
 
 ## M10 — Debugger ⏳
+- Initial CLI Xdebug 3 workflow: loopback listener, caret-line breakpoint, and step commands
+- Cachegrind profile generation with a basic per-function self-cost summary
 - Xdebug 3 DBGp listener via `dbgp` service
 - Breakpoints: line, conditional, logpoint, exception, function
 - Step controls: over, into, out, run to cursor
@@ -142,6 +148,7 @@ This file mirrors the milestone plan from the master specification.
 - Debug web requests, CLI scripts, and tests
 
 ## M11 — Database Tools ⏳
+- Dedicated Database tool window and SQL console, built around the `dbtools` service
 - Database connections: MySQL/MariaDB, PostgreSQL, SQLite
 - Schema browser (tables, columns, indexes, foreign keys)
 - Table data grid with inline editing
@@ -153,6 +160,7 @@ This file mirrors the milestone plan from the master specification.
 
 ## M12 — Local AI Assistant ⏳
 - Providers: Ollama (HTTP localhost) and llama.cpp (OpenAI-compatible endpoint)
+- Offline-first operation; all model requests stay on loopback and project context remains local
 - Chat with project context (retrieval over symbol index + file chunks)
 - Inline completion (fill-in-the-middle with small coder model)
 - Explain error, explain selection, generate tests, generate PHPDoc

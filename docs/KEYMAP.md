@@ -3,6 +3,12 @@
 All actions and their default key bindings. Keymaps are defined in
 `resources/keymaps/default.json` (PhpStorm-compatible) and `resources/keymaps/vscode.json`.
 
+The JSON files describe the target keymap, but only actions implemented and registered in
+the current build respond to shortcuts. Find, Find Next, Go to Line, Go to File, Recent Files,
+basic file/edit/window actions, terminal history/clear/copy/paste, running and profiling a
+saved PHP file, early Xdebug CLI debugging, and Git Status are currently connected. PHP
+intelligence, semantic refactoring, and full VCS shortcuts are still planned.
+
 ## File
 
 | Action | Default | VS Code |
@@ -48,7 +54,9 @@ All actions and their default key bindings. Keymaps are defined in
 | Find Usages | `Alt+F7` | `Shift+F12` |
 | Find in Files | `Ctrl+Shift+F` | `Ctrl+Shift+F` |
 | Replace in Files | `Ctrl+Shift+R` | `Ctrl+Shift+H` |
-| Local Find | `Ctrl+F` | `Ctrl+F` |
+| Find in Current File | `Ctrl+F` | `Ctrl+F` |
+| Find Next | `F3` | — |
+| Go to Line | `Ctrl+G` | — |
 | Local Replace | `Ctrl+R` | `Ctrl+H` |
 
 ## Code Intelligence
@@ -78,8 +86,9 @@ All actions and their default key bindings. Keymaps are defined in
 
 | Action | Default | VS Code |
 |--------|---------|---------|
-| Run | `Shift+F10` | `Ctrl+F5` |
+| Run Current PHP File | `Shift+F10` | `Ctrl+F5` |
 | Debug | `Shift+F9` | `F5` |
+| Profile Current PHP File | `Alt+Shift+F10` | `Alt+Shift+F10` |
 | Stop | `Ctrl+F2` | — |
 | Step Over | `F8` | `F10` |
 | Step Into | `F7` | `F11` |
@@ -99,8 +108,12 @@ All actions and their default key bindings. Keymaps are defined in
 | Action | Default | VS Code |
 |--------|---------|---------|
 | Settings | `Ctrl+Alt+S` | `Ctrl+,` |
+| Plugin Manager | `Ctrl+Alt+Shift+P` | `Ctrl+Shift+X` |
 | Project Tree | `Alt+1` | — |
 | Terminal | `Alt+F12` | `` Ctrl+` `` |
+| Clear Terminal (terminal focused) | `Ctrl+L` | — |
+| Copy Terminal Selection (terminal focused) | `Ctrl+Shift+C` | — |
+| Paste into Terminal (terminal focused) | `Ctrl+Shift+V` | — |
 | Problems | `Alt+6` | — |
 | Structure | `Alt+7` | — |
 

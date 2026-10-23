@@ -2,6 +2,7 @@ qt_add_executable(forge_app
     main.cpp
     MainWindow.cpp
     MainWindow.h
+    ${CMAKE_SOURCE_DIR}/resources/resources.qrc
 )
 
 set_target_properties(forge_app PROPERTIES

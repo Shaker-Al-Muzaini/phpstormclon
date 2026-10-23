@@ -20,11 +20,16 @@
     "forge.edit.toggleComment":              "Ctrl+/",
     "forge.run.run":                         "Ctrl+F5",
     "forge.run.debug":                       "F5",
+    "forge.run.profile":                     "Alt+Shift+F10",
     "forge.debug.stepOver":                  "F10",
     "forge.debug.stepInto":                  "F11",
     "forge.debug.stepOut":                   "Shift+F11",
     "forge.debug.toggleBreakpoint":          "F9",
     "forge.window.terminal":                 "Ctrl+`",
-    "forge.window.settings":                 "Ctrl+,"
+    "forge.window.settings":                 "Ctrl+,",
+    "forge.window.plugins":                  "Ctrl+Shift+X",
+    "forge.terminal.clear":                  "Ctrl+L",
+    "forge.terminal.copy":                   "Ctrl+Shift+C",
+    "forge.terminal.paste":                  "Ctrl+Shift+V"
   }
 }

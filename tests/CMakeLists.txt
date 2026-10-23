@@ -13,18 +13,18 @@ if(GTest_FOUND)
         forge_core
         forge_platform
         GTest::gtest
-        GTest::gtest_main
         Qt6::Core
+        Qt6::Widgets
     )
 
     set_property(TARGET forge_tests PROPERTY CROSSCOMPILING_EMULATOR
-        "${CMAKE_COMMAND};-E;env;PATH=$<TARGET_FILE_DIR:Qt6::Core>"
+        "${CMAKE_COMMAND};-E;env;PATH=$<TARGET_FILE_DIR:Qt6::Core>;QT_QPA_PLATFORM=offscreen"
     )
 
     gtest_discover_tests(forge_tests
         DISCOVERY_MODE PRE_TEST
         PROPERTIES ENVIRONMENT_MODIFICATION
-            "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+            "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>;QT_QPA_PLATFORM=set:offscreen"
     )
 else()
     message(STATUS "[Tests] GoogleTest not found via vcpkg. Skipping C++ tests.")
