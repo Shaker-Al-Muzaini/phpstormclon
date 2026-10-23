@@ -72,7 +72,7 @@ jobs:
           cache: true
 
       - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89ca6c46cf6a150a
+        uses: ilammy/msvc-dev-cmd@286b8361db1ed000638eec123e4f123256767362
         with:
           arch: x64
 
