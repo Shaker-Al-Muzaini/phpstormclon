@@ -45,10 +45,14 @@ async fn read_message(stdout: &mut BufReader<ChildStdout>) -> io::Result<serde_j
 async fn write_message(stdin: &mut ChildStdin, message: &serde_json::Value) -> io::Result<()> {
     let body = serde_json::to_vec(message)
         .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    write_raw_message(stdin, &body).await
+}
+
+async fn write_raw_message(stdin: &mut ChildStdin, body: &[u8]) -> io::Result<()> {
     stdin
         .write_all(format!("Content-Length: {}\r\n\r\n", body.len()).as_bytes())
         .await?;
-    stdin.write_all(&body).await?;
+    stdin.write_all(body).await?;
     stdin.flush().await
 }
 
@@ -76,14 +80,37 @@ async fn phpintel_handshakes_answers_requests_and_shuts_down() {
     assert_eq!(ready["method"], "$/ready");
     assert_eq!(ready["params"]["service"], "phpintel");
 
+    write_raw_message(&mut stdin, b"{\"jsonrpc\":")
+        .await
+        .unwrap();
+    let parse_error = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(parse_error["id"], serde_json::Value::Null);
+    assert_eq!(parse_error["error"]["code"], -32700);
+
     write_message(
         &mut stdin,
-        &serde_json::json!({"jsonrpc": "2.0", "id": 1, "method": "$/ping"}),
+        &serde_json::json!({"jsonrpc": "2.0", "id": true, "method": "$/ping"}),
+    )
+    .await
+    .expect("failed to send invalid request");
+    let invalid_request = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(invalid_request["id"], serde_json::Value::Null);
+    assert_eq!(invalid_request["error"]["code"], -32600);
+
+    write_message(
+        &mut stdin,
+        &serde_json::json!({"jsonrpc": "2.0", "method": "$/unknown"}),
+    )
+    .await
+    .expect("failed to send notification");
+    write_message(
+        &mut stdin,
+        &serde_json::json!({"jsonrpc": "2.0", "id": "ping-1", "method": "$/ping"}),
     )
     .await
     .expect("failed to send ping");
     let pong = read_message_with_timeout(&mut stdout).await;
-    assert_eq!(pong["id"], 1);
+    assert_eq!(pong["id"], "ping-1");
     assert_eq!(pong["result"]["pong"], true);
     assert_eq!(pong["result"]["service"], "phpintel");
 

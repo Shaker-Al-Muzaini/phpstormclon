@@ -4,6 +4,9 @@
 use bytes::{Buf, BufMut, BytesMut};
 use tokio_util::codec::{Decoder, Encoder};
 
+const MAX_FRAME_SIZE: usize = 64 * 1024 * 1024;
+const MAX_HEADER_SIZE: usize = 8 * 1024;
+
 pub struct LspFrameCodec;
 
 impl Decoder for LspFrameCodec {
@@ -13,17 +16,38 @@ impl Decoder for LspFrameCodec {
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         // Look for \r\n\r\n
         let header_end = match find_subsequence(src, b"\r\n\r\n") {
-            Some(i) => i,
-            None => return Ok(None),
+            Some(i) if i <= MAX_HEADER_SIZE => i,
+            Some(_) => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "frame header exceeds 8 KiB limit",
+                ));
+            }
+            None if src.len() <= MAX_HEADER_SIZE => return Ok(None),
+            None => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "frame header exceeds 8 KiB limit",
+                ));
+            }
         };
 
         let header = &src[..header_end];
         let content_length = parse_content_length(header).ok_or_else(|| {
             std::io::Error::new(std::io::ErrorKind::InvalidData, "missing Content-Length")
         })?;
+        if content_length == 0 || content_length > MAX_FRAME_SIZE {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "frame length is zero or exceeds 64 MiB limit",
+            ));
+        }
 
         let body_start = header_end + 4;
-        if src.len() < body_start + content_length {
+        let frame_end = body_start.checked_add(content_length).ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, "frame length overflow")
+        })?;
+        if src.len() < frame_end {
             return Ok(None); // wait for more data
         }
 
@@ -37,6 +61,12 @@ impl Encoder<Vec<u8>> for LspFrameCodec {
     type Error = std::io::Error;
 
     fn encode(&mut self, item: Vec<u8>, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        if item.len() > MAX_FRAME_SIZE {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "frame exceeds 64 MiB limit",
+            ));
+        }
         let header = format!("Content-Length: {}\r\n\r\n", item.len());
         dst.put_slice(header.as_bytes());
         dst.put_slice(&item);
@@ -50,14 +80,18 @@ fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 
 fn parse_content_length(header: &[u8]) -> Option<usize> {
     let s = std::str::from_utf8(header).ok()?;
+    let mut content_length = None;
     for line in s.lines() {
         if let Some((name, value)) = line.split_once(':')
             && name.trim().eq_ignore_ascii_case("content-length")
         {
-            return value.trim().parse().ok();
+            if content_length.is_some() {
+                return None;
+            }
+            content_length = Some(value.trim().parse().ok()?);
         }
     }
-    None
+    content_length
 }
 
 #[cfg(test)]
@@ -121,5 +155,48 @@ mod tests {
 
         let error = LspFrameCodec.decode(&mut buf).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    }
+
+    #[test]
+    fn oversized_frame_is_rejected_before_waiting_for_body() {
+        let mut buf = BytesMut::from(b"Content-Length: 67108865\r\n\r\n".as_slice());
+
+        let error = LspFrameCodec.decode(&mut buf).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    }
+
+    #[test]
+    fn oversized_header_is_rejected_before_terminator() {
+        let mut buf = BytesMut::from(vec![b'x'; MAX_HEADER_SIZE + 1].as_slice());
+
+        let error = LspFrameCodec.decode(&mut buf).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    }
+
+    #[test]
+    fn duplicate_content_length_is_rejected() {
+        let mut buf =
+            BytesMut::from(b"Content-Length: 2\r\ncontent-length: 2\r\n\r\n{}".as_slice());
+
+        let error = LspFrameCodec.decode(&mut buf).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    }
+
+    #[test]
+    fn zero_length_frame_is_rejected() {
+        let mut buf = BytesMut::from(b"Content-Length: 0\r\n\r\n".as_slice());
+
+        let error = LspFrameCodec.decode(&mut buf).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    }
+
+    #[test]
+    fn oversized_encoded_frame_is_rejected() {
+        let mut buf = BytesMut::new();
+        let error = LspFrameCodec
+            .encode(vec![0; MAX_FRAME_SIZE + 1], &mut buf)
+            .unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+        assert!(buf.is_empty());
     }
 }

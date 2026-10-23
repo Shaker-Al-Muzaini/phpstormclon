@@ -16,7 +16,7 @@ version      = "0.1.0"
 edition      = "2024"
 authors      = ["Forge IDE Contributors"]
 license      = "Apache-2.0"
-repository   = "https://github.com/forge-ide/forge-ide"
+repository   = "https://github.com/Shaker-Al-Muzaini/phpstormclon"
 rust-version = "1.85"
 
 [workspace.dependencies]

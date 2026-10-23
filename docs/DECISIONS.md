@@ -33,3 +33,8 @@ Format: `YYYY-MM-DD | Decision | Reason`
 | 2026-10-21 | bytes crate added to rpc-common | Required by tokio-util codec infrastructure |
 | 2026-10-22 | futures-util `sink` feature enabled | Required for `SinkExt::send` when writing framed JSON-RPC responses |
 | 2026-10-22 | Qt 6.8.3 MSVC 2022 x64 used for Windows verification | Latest available Qt 6.8 patch release in the official Qt archive; matches the project's Qt 6.8 LTS requirement |
+| 2026-10-23 | Pin CI and local Rust builds to 1.99.1 | Reproducible service builds and identical CI/local toolchain behavior |
+| 2026-10-23 | Preserve source encoding and each existing line ending; use QSaveFile for writes | Avoid corrupting legacy Arabic/Windows-encoded files or truncating originals on interrupted saves |
+| 2026-10-23 | Cap JSON-RPC frames at 64 MiB and headers at 8 KiB; fail pending calls when the peer exits | Bound untrusted IPC input and make service failures observable to request handlers |
+| 2026-10-23 | Keep the RSA Marvin advisory visible but narrowly acknowledged in dependency policy | No fixed rsa version is available; it is currently only pulled in transitively by the dbtools SQLx MySQL feature, whose database functionality is not yet implemented |
+| 2026-10-23 | Upgrade git2 and Tokio to patched releases; remove unused portable-pty dependency | Resolve reported unsoundness/race advisories and avoid an unmaintained serial dependency pulled by an unused terminal skeleton |

@@ -7,10 +7,12 @@ add_library(forge_core STATIC
     include/forge/core/RpcClient.h
     include/forge/core/ServiceSupervisor.h
     include/forge/core/Settings.h
+    include/forge/core/TextFileCodec.h
     src/ActionManager.cpp
     src/ServiceSupervisor.cpp
     src/RpcClient.cpp
     src/Settings.cpp
+    src/TextFileCodec.cpp
     src/ProjectModel.cpp
     src/ExtensionRegistry.cpp
     src/FileWatcher.cpp

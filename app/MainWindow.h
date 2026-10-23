@@ -124,4 +124,5 @@ private:
     QString m_themeName = QStringLiteral("Graphite");
     QString m_lastFindQuery;
     QStringList m_recentFiles;
+    bool m_servicesStopping = false;
 };

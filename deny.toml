@@ -1,8 +1,12 @@
-# cargo-deny configuration
-# Run: cargo deny check
+[advisories]
+version = 2
+ignore = [
+    { id = "RUSTSEC-2023-0071", reason = "The advisory has no patched rsa release as of 2026-09-12. rsa is only transitive through sqlx-mysql in dbtools; no code in this workspace performs RSA private-key operations. Reassess when database connections are implemented." },
+]
 
 [licenses]
-unlicensed = "deny"
+version = 2
+unused-allowed-license = "allow"
 allow = [
     "MIT",
     "Apache-2.0",
@@ -17,16 +21,12 @@ allow = [
     "Zlib",
     "OpenSSL",
 ]
-copyleft = "deny"
+confidence-threshold = 0.8
 
 [bans]
 multiple-versions = "warn"
-
-[advisories]
-database-path = "~/.cargo/advisory-db"
-vulnerability = "deny"
-notice = "warn"
-ignore = []
+wildcards = "deny"
+highlight = "all"
 
 [sources]
 unknown-registry = "deny"

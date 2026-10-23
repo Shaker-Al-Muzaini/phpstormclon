@@ -2,8 +2,8 @@
 
 ## Status
 
-**Current milestone: M1 — Shell and Docking (in progress)**
-**Overall: M0 complete; initial M1 shell implemented and verified locally**
+**Current session: S1 — Data integrity and service lifecycle (local checks complete; hosted CI pending)**
+**Product milestone: M1 — Shell and Docking (in progress)**
 
 ---
 
@@ -14,7 +14,7 @@
 - [x] `CMakeLists.txt` — top-level with Corrosion + Qt6 + vcpkg
 - [x] `CMakePresets.json` — windows-debug and windows-release presets
 - [x] `Cargo.toml` — workspace with all 6 service crates
-- [x] `rust-toolchain.toml` — pinned to stable Rust
+- [x] `rust-toolchain.toml` — pinned to Rust 1.99.1
 - [x] `vcpkg.json` — manifest for C++ dependencies
 - [x] `core/` — ServiceSupervisor, RpcClient, ActionManager, Settings
 - [x] `app/` — main.cpp, MainWindow (skeleton Qt window)
@@ -40,6 +40,18 @@
 - [x] Windows C++/Qt verification — configured with Qt 6.8.3, built the full CMake/Cargo workspace, and passed both C++ smoke tests with CTest
 - [x] Application smoke test — ForgeIDE remained running and started the `phpintel --stdio` child service
 - [x] CI build/test steps reproduced locally — Rust and C++ checks pass; hosted GitHub Actions has not been run from this environment
+
+### S1 — Data integrity and service lifecycle (in progress)
+- [x] Preserve UTF-8/BOM, UTF-16 LE/BE, Windows-1256/1252, mixed line endings, and reject invalid encodings instead of silently replacing text.
+- [x] Save files atomically; retain encoding and per-line endings when saving.
+- [x] Bound and validate JSON-RPC frames; fail outstanding requests on malformed protocol data or service exit.
+- [x] Make service shutdown asynchronous and bounded, capture stderr logs, and reset restart backoff after stable uptime.
+- [x] Pin Rust 1.99.1, require GoogleTest for C++ test configurations, and tighten CI/dependency checks.
+- [x] Add RPC/service lifecycle, encoding, theme resource, and keymap tests.
+- [x] Windows Debug build and all 13 C++ tests pass; Rust workspace tests and Clippy pass.
+- [x] Run `cargo audit` against the cached RustSec database (281 dependencies); no other advisories were reported. The local registry yanked-crate lookup timed out, so hosted CI must verify the complete audit.
+- [x] Record the temporary RSA Marvin advisory exception and dependency audit limitations in `docs/SECURITY.md`.
+- [ ] Verify hosted CI after pushing the S1 changes before marking S1 complete.
 
 ### M1 — Shell and Docking (in progress)
 - [x] Main window menus, toolbar, and service status bar
@@ -75,7 +87,7 @@
 - M1 is not complete: tool windows use Qt's built-in docking rather than Qt Advanced Docking System; configurable auto-hide stripes, working debugger controls, complete settings/keymap selection, per-project layouts, and RTL/high-DPI verification remain.
 - The icon system assigns language badges to common PHP/Blade/web/config file types; unsupported extensions use the generic document icon.
 - The current terminal is a redirected PowerShell session, not ConPTY. Full terminal emulation, interactive TTY applications, terminal profiles/tabs, and robust Ctrl+C handling remain planned for M6.
-- The current editor has a gutter and basic lexical highlighting, but not tree-sitter parsing or semantic tokens. Encoding detection, line-ending preservation, tabs/splits, folding, and large-file handling remain unimplemented.
+- The current editor has a gutter and basic lexical highlighting, but not tree-sitter parsing or semantic tokens. Encoding detection and line-ending preservation now cover UTF-8, UTF-16, and Windows code pages; tabs/splits and large-file handling remain unimplemented.
 - Plugin Manager is informational and scans local manifests only. Signed marketplace catalog verification, native DLL loading/lifecycle, plugin enable/disable, and online installation remain unimplemented; no third-party code is downloaded or executed.
 - Xdebug support is an early CLI workflow: it requires Xdebug 3 already enabled in `php.exe`,
   listens on local port 9003, and supports a caret-line breakpoint plus step commands. Call

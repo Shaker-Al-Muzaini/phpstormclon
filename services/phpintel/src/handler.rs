@@ -7,14 +7,14 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Handle $/ping — returns { pong: true, version: "x.y.z" }
 pub fn ping(req: &rpc_common::types::RpcRequest) -> RpcResponse {
     RpcResponse::ok(
-        req.id,
+        req.id.clone(),
         serde_json::json!({
             "pong": true,
             "version": VERSION,
             "service": "phpintel",
         }),
     )
-    .unwrap_or_else(|e| RpcResponse::err(req.id, -32603, e.to_string()))
+    .unwrap_or_else(|e| RpcResponse::err(req.id.clone(), -32603, e.to_string()))
 }
 
 #[cfg(test)]
@@ -25,7 +25,7 @@ mod tests {
     fn make_ping_req(id: i64) -> RpcRequest {
         RpcRequest {
             jsonrpc: "2.0".into(),
-            id,
+            id: Some(serde_json::json!(id)),
             method: "$/ping".into(),
             params: None,
         }
@@ -35,7 +35,7 @@ mod tests {
     fn ping_returns_pong() {
         let req = make_ping_req(42);
         let resp = ping(&req);
-        assert_eq!(resp.id, 42);
+        assert_eq!(resp.id, Some(serde_json::json!(42)));
         assert!(resp.error.is_none());
         let result = resp.result.unwrap();
         assert_eq!(result["pong"], true);
@@ -46,7 +46,7 @@ mod tests {
     fn ping_preserves_id() {
         for id in [0, 1, 99, i64::MAX] {
             let req = make_ping_req(id);
-            assert_eq!(ping(&req).id, id);
+            assert_eq!(ping(&req).id, Some(serde_json::json!(id)));
         }
     }
 }

@@ -1,5 +1,6 @@
 # Build directories
 build/
+out/
 target/
 *.o
 *.obj
@@ -14,6 +15,7 @@ target/
 
 # CMake
 CMakeCache.txt
+CMakeUserPresets.json
 CMakeFiles/
 cmake_install.cmake
 install_manifest.txt

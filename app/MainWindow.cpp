@@ -49,6 +49,7 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QPushButton>
+#include <QSaveFile>
 #include <QRegularExpression>
 #include <QSet>
 #include <QStackedWidget>
@@ -77,10 +78,41 @@
 #include "forge/core/RpcClient.h"
 #include "forge/core/ServiceSupervisor.h"
 #include "forge/core/Settings.h"
+#include "forge/core/TextFileCodec.h"
 
 namespace {
 
 constexpr int kWindowLayoutVersion = 2;
+
+class LineEndingBlockData final : public QTextBlockUserData {
+public:
+    explicit LineEndingBlockData(forge::core::LineEnding value) : ending(value) {}
+    forge::core::LineEnding ending;
+};
+
+void storeLineEndings(QTextDocument* document,
+                      const QVector<forge::core::LineEnding>& lineEndings) {
+    QTextBlock block = document->firstBlock();
+    qsizetype index = 0;
+    while (block.isValid() && block.next().isValid()) {
+        if (index < lineEndings.size()) {
+            block.setUserData(new LineEndingBlockData(lineEndings.at(index)));
+        }
+        ++index;
+        block = block.next();
+    }
+}
+
+QVector<forge::core::LineEnding> documentLineEndings(QTextDocument* document) {
+    QVector<forge::core::LineEnding> lineEndings;
+    QTextBlock block = document->firstBlock();
+    while (block.isValid() && block.next().isValid()) {
+        auto* data = dynamic_cast<LineEndingBlockData*>(block.userData());
+        lineEndings.append(data ? data->ending : forge::core::LineEnding::Lf);
+        block = block.next();
+    }
+    return lineEndings;
+}
 
 class TerminalOutputView final : public QPlainTextEdit {
 public:
@@ -1159,6 +1191,12 @@ MainWindow::MainWindow(forge::core::ActionManager* actions,
     }
 
     setupServices();
+    connect(m_supervisor, &forge::core::ServiceSupervisor::allServicesStopped, this, [this]() {
+        if (m_servicesStopping) {
+            m_servicesStopping = false;
+            close();
+        }
+    });
     qInfo() << "[MainWindow] IDE shell initialized.";
 }
 
@@ -1200,7 +1238,14 @@ void MainWindow::closeEvent(QCloseEvent* event)
                            QString::fromLatin1(saveGeometry().toBase64()));
         settings->save();
     }
-    m_supervisor->stopAll();
+    if (!m_supervisor->allStopped()) {
+        m_servicesStopping = true;
+        setEnabled(false);
+        statusBar()->showMessage(QStringLiteral("Stopping background services..."));
+        event->ignore();
+        m_supervisor->stopAll();
+        return;
+    }
     for (QProcess* process : std::as_const(m_terminalProcesses)) {
         if (process && process->state() != QProcess::NotRunning) {
             process->terminate();
@@ -2333,6 +2378,26 @@ void MainWindow::setupServices()
 {
     connect(m_supervisor, &forge::core::ServiceSupervisor::serviceStateChanged,
             this, &MainWindow::onServiceStateChanged);
+    connect(m_supervisor, &forge::core::ServiceSupervisor::serviceStarted, this,
+            [this](const QString& key) {
+                if (key != QStringLiteral("phpintel")) {
+                    return;
+                }
+                QProcess* process = m_supervisor->process(key);
+                if (!process) {
+                    qWarning() << "[MainWindow] phpintel process is not available after startup.";
+                    m_statusLabel->setText(QStringLiteral("phpintel: unavailable"));
+                    return;
+                }
+                if (!m_phpIntelClient) {
+                    m_phpIntelClient = std::make_unique<forge::core::RpcClient>(process, this);
+                }
+                m_phpIntelClient->sendRequest(QStringLiteral("$/ping"), {},
+                                              [this](const QJsonObject& result,
+                                                     const QJsonObject& error) {
+                                                  onPingResponse(result, error);
+                                              });
+            });
 
     const QString phpIntelBin =
         QCoreApplication::applicationDirPath() + QStringLiteral("/phpintel.exe");
@@ -2427,7 +2492,22 @@ void MainWindow::openFilePath(const QString& path) {
         return;
     }
     const QByteArray contents = file.readAll();
-    if (contents.contains('\0')) {
+    if (file.error() != QFileDevice::NoError) {
+        QMessageBox::critical(
+            this, QStringLiteral("Open File"),
+            QStringLiteral("Could not read %1 completely:\n%2")
+                .arg(info.fileName(), file.errorString()));
+        return;
+    }
+    forge::core::DecodedText decoded;
+    QString decodeError;
+    if (!forge::core::TextFileCodec::decode(contents, &decoded, &decodeError)) {
+        QMessageBox::critical(this, QStringLiteral("Open File"),
+                              QStringLiteral("Could not decode %1:\n%2")
+                                  .arg(info.fileName(), decodeError));
+        return;
+    }
+    if (decoded.text.contains(QChar::Null)) {
         QMessageBox::warning(
             this, QStringLiteral("Open File"),
             QStringLiteral("%1 appears to be a binary file.").arg(info.fileName()));
@@ -2437,8 +2517,10 @@ void MainWindow::openFilePath(const QString& path) {
     auto* editor = new ForgeCodeEditor(m_editorTabs);
     editor->setProperty("filePath", info.absoluteFilePath());
     editor->setProperty("forgeSourceEditor", true);
+    editor->setProperty("textEncoding", static_cast<int>(decoded.encoding));
     editor->setObjectName(QStringLiteral("ForgeCodeEditor"));
-    editor->setPlainText(QString::fromUtf8(contents));
+    editor->setPlainText(decoded.text);
+    storeLineEndings(editor->document(), decoded.lineEndings);
     auto* highlighter = new ForgeSyntaxHighlighter(
         editor->document(),
         info.fileName().toLower().endsWith(QStringLiteral(".blade.php")) ? QStringLiteral("blade")
@@ -2472,6 +2554,7 @@ void MainWindow::createUntitledDocument()
     auto* editor = new ForgeCodeEditor(m_editorTabs);
     editor->setProperty("filePath", QString());
     editor->setProperty("forgeSourceEditor", true);
+    editor->setProperty("textEncoding", static_cast<int>(forge::core::TextEncoding::Utf8));
     editor->setObjectName(QStringLiteral("ForgeCodeEditor"));
     auto* highlighter = new ForgeSyntaxHighlighter(editor->document(), QString(), editor);
     editor->setSyntaxHighlighter(highlighter);
@@ -2504,19 +2587,37 @@ bool MainWindow::saveDocument(QPlainTextEdit* editor)
         }
     }
 
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    const auto encoding = static_cast<forge::core::TextEncoding>(
+        editor->property("textEncoding").toInt());
+    QByteArray serializedContents;
+    QString encodeError;
+    if (!forge::core::TextFileCodec::encode(editor->toPlainText(), encoding,
+                                             documentLineEndings(editor->document()),
+                                             &serializedContents, &encodeError)) {
+        QMessageBox::critical(this, QStringLiteral("Save File"),
+                              QStringLiteral("Could not encode %1:\n%2").arg(path, encodeError));
+        return false;
+    }
+
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
         QMessageBox::critical(this, QStringLiteral("Save File"),
                               QStringLiteral("Could not save %1:\n%2")
                                   .arg(path, file.errorString()));
         return false;
     }
-
-    const QByteArray serializedContents = editor->toPlainText().toUtf8();
     if (file.write(serializedContents) != serializedContents.size()) {
+        const QString fileError = file.errorString();
+        file.cancelWriting();
+        QMessageBox::critical(
+            this, QStringLiteral("Save File"),
+            QStringLiteral("The file could not be written completely:\n%1").arg(fileError));
+        return false;
+    }
+    if (!file.commit()) {
         QMessageBox::critical(this, QStringLiteral("Save File"),
-                              QStringLiteral("The file could not be written completely:\n%1")
-                                  .arg(file.errorString()));
+                              QStringLiteral("Could not complete saving %1:\n%2")
+                                  .arg(path, file.errorString()));
         return false;
     }
 
@@ -2931,7 +3032,16 @@ void MainWindow::onPingResponse(const QJsonObject& result, const QJsonObject& er
 {
     if (!error.isEmpty()) {
         qWarning() << "[MainWindow] Ping error:" << error;
+        m_statusLabel->setText(QStringLiteral("phpintel: handshake failed"));
     } else {
         qInfo() << "[MainWindow] Ping OK:" << result;
+        if (result.value(QStringLiteral("pong")).toBool()) {
+            m_statusLabel->setText(
+                QStringLiteral("phpintel: ready %1")
+                    .arg(result.value(QStringLiteral("version")).toString()));
+        } else {
+            m_statusLabel->setText(QStringLiteral("phpintel: invalid handshake response"));
+            qWarning() << "[MainWindow] Unexpected phpintel handshake response:" << result;
+        }
     }
 }

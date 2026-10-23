@@ -52,6 +52,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 #  Corrosion — integrates Cargo workspace into CMake
 #  Version: v0.6.1 (latest stable as of 2026-10-21)
 # ============================================================
+if(NOT DEFINED Rust_TOOLCHAIN)
+    set(Rust_TOOLCHAIN "1.99.1" CACHE STRING "Pinned Rust toolchain")
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
     Corrosion

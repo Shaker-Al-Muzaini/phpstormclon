@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QHash>
+#include <QJsonValue>
 #include <functional>
 #include <atomic>
 
@@ -46,19 +47,23 @@ signals:
 
     /// Emitted when a response arrives but no callback is registered (unexpected).
     void orphanResponse(int id, const QJsonObject& response);
+    void protocolError(const QString& message);
 
 private slots:
     void onReadyRead();
+    void onProcessEnded();
 
 private:
     void processBuffer();
     void dispatchMessage(const QByteArray& json);
     QByteArray encodeMessage(const QJsonObject& obj) const;
+    void failPending(const QString& reason);
 
     QProcess*                         m_process;
     QByteArray                        m_readBuffer;
     std::atomic<int>                  m_nextId{1};
     QHash<int, ResponseCallback>      m_pending;
+    static constexpr qsizetype kMaxFrameBytes = 64 * 1024 * 1024;
 };
 
 } // namespace forge::core

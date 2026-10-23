@@ -2,7 +2,7 @@
 
 **A native PHP/Laravel desktop IDE — built for speed with Qt 6 and Rust.**
 
-[![CI](https://github.com/forge-ide/forge-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/forge-ide/forge-ide/actions)
+[![CI](https://github.com/Shaker-Al-Muzaini/phpstormclon/actions/workflows/ci.yml/badge.svg)](https://github.com/Shaker-Al-Muzaini/phpstormclon/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 > **Status:** Milestone 1 — IDE shell in progress. The current build can browse a project and edit basic text files; PHP/Laravel intelligence and the full editor are not implemented yet. See [PROGRESS.md](PROGRESS.md).
@@ -55,7 +55,7 @@ fully open, native Windows application. It is designed from the ground up for sp
 | Tool | Version | Where to get |
 |------|---------|--------------|
 | Qt 6.8 LTS | 6.8.x | [qt.io/download-open-source](https://www.qt.io/download-open-source) — pick MSVC 2022 64-bit |
-| Rust stable | 1.85+ | [rustup.rs](https://rustup.rs/) |
+| Rust | 1.99.1 (pinned in `rust-toolchain.toml`) | [rustup.rs](https://rustup.rs/) |
 | CMake | 4.x | [cmake.org](https://cmake.org/download/) |
 | Visual Studio 2022 | 17.x | C++ Desktop workload required |
 | Ninja | any | `winget install Ninja-build.Ninja` |

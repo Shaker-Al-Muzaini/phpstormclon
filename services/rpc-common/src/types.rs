@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// A JSON-RPC 2.0 request (with id).
+/// A JSON-RPC 2.0 request or notification.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RpcRequest {
     pub jsonrpc: String,
-    pub id: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<Value>,
     pub method: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub params: Option<Value>,
@@ -15,7 +16,7 @@ pub struct RpcRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RpcResponse {
     pub jsonrpc: String,
-    pub id: i64,
+    pub id: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -23,7 +24,7 @@ pub struct RpcResponse {
 }
 
 impl RpcResponse {
-    pub fn ok(id: i64, result: impl Serialize) -> anyhow::Result<Self> {
+    pub fn ok(id: Option<Value>, result: impl Serialize) -> anyhow::Result<Self> {
         Ok(RpcResponse {
             jsonrpc: "2.0".into(),
             id,
@@ -32,7 +33,7 @@ impl RpcResponse {
         })
     }
 
-    pub fn err(id: i64, code: i64, message: impl Into<String>) -> Self {
+    pub fn err(id: Option<Value>, code: i64, message: impl Into<String>) -> Self {
         RpcResponse {
             jsonrpc: "2.0".into(),
             id,
