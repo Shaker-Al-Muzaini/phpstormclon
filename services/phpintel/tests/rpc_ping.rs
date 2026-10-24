@@ -140,3 +140,84 @@ async fn phpintel_handshakes_answers_requests_and_shuts_down() {
         .expect("failed to wait for phpintel");
     assert!(status.success());
 }
+
+#[tokio::test]
+async fn phpintel_publishes_and_clears_incremental_php_diagnostics() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_phpintel"))
+        .arg("--stdio")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true)
+        .spawn()
+        .expect("failed to start phpintel");
+    let mut stdin = child.stdin.take().expect("phpintel stdin is unavailable");
+    let mut stdout = BufReader::new(child.stdout.take().expect("phpintel stdout is unavailable"));
+    let ready = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(ready["method"], "$/ready");
+
+    write_message(
+        &mut stdin,
+        &serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {
+                "textDocument": {
+                    "uri": "file:///workspace/example.php",
+                    "languageId": "php",
+                    "version": 1,
+                    "text": "<?php\nnamespace App\nuse Example\\Thing;\n"
+                }
+            }
+        }),
+    )
+    .await
+    .expect("failed to send didOpen notification");
+    let published = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(published["method"], "textDocument/publishDiagnostics");
+    let diagnostics = published["params"]["diagnostics"]
+        .as_array()
+        .expect("diagnostics is an array");
+    let missing_semicolon = diagnostics
+        .iter()
+        .find(|diagnostic| diagnostic["code"] == "php.syntax.missing-semicolon")
+        .expect("missing semicolon is reported");
+    assert_eq!(missing_semicolon["range"]["start"]["line"], 1);
+    assert_eq!(missing_semicolon["source"], "phpintel");
+
+    write_message(
+        &mut stdin,
+        &serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didChange",
+            "params": {
+                "textDocument": {
+                    "uri": "file:///workspace/example.php",
+                    "version": 2
+                },
+                "contentChanges": [{"text": "<?php\nnamespace App;\nuse Example\\Thing;\n"}]
+            }
+        }),
+    )
+    .await
+    .expect("failed to send didChange notification");
+    let cleared = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(
+        cleared["params"]["diagnostics"]
+            .as_array()
+            .expect("published diagnostics is an array")
+            .len(),
+        0
+    );
+
+    write_message(
+        &mut stdin,
+        &serde_json::json!({"jsonrpc": "2.0", "method": "$/shutdown"}),
+    )
+    .await
+    .expect("failed to send shutdown notification");
+    timeout(IO_TIMEOUT, child.wait())
+        .await
+        .expect("phpintel did not shut down")
+        .expect("failed to wait for phpintel");
+}

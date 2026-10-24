@@ -15,6 +15,9 @@ add_library(forge_workspace STATIC
     FindBar.cpp
     ExtensionsDialog.h
     ExtensionsDialog.cpp
+    ProblemsPanel.h
+    ProblemsPanel.cpp
+    MainWindowDiagnostics.cpp
     BrandSplash.cpp
 )
 

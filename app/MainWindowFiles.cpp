@@ -34,6 +34,15 @@ void MainWindow::setProjectRoot(const QString& path) {
             QString::fromLatin1(saveState(kWindowLayoutVersion).toBase64()));
     m_projectRoot = info.absoluteFilePath();
     m_projectSearch->setRoot(m_projectRoot);
+    m_laravelLogPath =
+        QDir(m_projectRoot).filePath(QStringLiteral("storage/logs/laravel.log"));
+    const QString logDirectory = QFileInfo(m_laravelLogPath).absolutePath();
+    m_fileWatcher->watchDirectory(logDirectory);
+    m_diagnostics.clearFileSource(m_laravelLogPath, QStringLiteral("laravel.log"));
+    if (QFileInfo::exists(m_laravelLogPath)) {
+        m_fileWatcher->watchFile(m_laravelLogPath);
+        updateLaravelLogDiagnostics();
+    }
     m_projectButton->setText(info.fileName());
     refreshBranch();
     auto recent = forge::core::Settings::instance()->value("project.recent").toStringList();
@@ -179,6 +188,9 @@ void MainWindow::openFilePath(const QString& path) {
             }
         });
     m_centerStack->setCurrentWidget(m_editorSplitter);
+    connectPhpIntelDocument(editor);
+    updateDiagnostics();
+    updateProblemsCurrentDocument();
     const auto treeIndex = m_fileSystemModel->index(info.absoluteFilePath());
     m_projectTree->setCurrentIndex(treeIndex);
     m_projectTree->scrollTo(treeIndex);
@@ -212,6 +224,7 @@ void MainWindow::createUntitledDocument() {
     m_editorTabs->setCurrentIndex(index);
     m_centerStack->setCurrentWidget(m_editorSplitter);
     editor->setFocus();
+    updateProblemsCurrentDocument();
 }
 
 bool MainWindow::saveCurrentDocument() {
@@ -281,7 +294,10 @@ bool MainWindow::saveDocument(QPlainTextEdit* editor) {
         }
     }
     editor->document()->setModified(false);
+    connectPhpIntelDocument(editor);
+    runPhpSyntaxCheck(path);
     updateDocumentInfo();
+    updateDiagnostics();
     int index = m_editorTabs->indexOf(editor);
     if (index < 0 && m_splitEditor == editor) index = m_editorTabs->currentIndex();
     if (index >= 0) {
@@ -297,6 +313,20 @@ void MainWindow::closeDocument(int index) {
     auto* editor = qobject_cast<QPlainTextEdit*>(m_editorTabs->widget(index));
     if (!editor) {
         return;
+    }
+    const QString path = editor->property("filePath").toString();
+    if (!path.isEmpty()) {
+        if (m_phpIntelClient && editor->property("phpIntelOpened").toBool()) {
+            if (QProcess* process = m_supervisor->process(QStringLiteral("phpintel"));
+                process && process->state() == QProcess::Running) {
+                m_phpIntelClient->sendNotification(
+                    QStringLiteral("textDocument/didClose"),
+                    {{QStringLiteral("textDocument"),
+                      QJsonObject{{QStringLiteral("uri"), QUrl::fromLocalFile(path).toString(
+                                                             QUrl::FullyEncoded)}}}});
+            }
+        }
+        m_diagnostics.clearFileSource(path, QStringLiteral("phpintel"));
     }
     if (editor->document()->isModified()) {
         const QMessageBox::StandardButton result = QMessageBox::warning(
@@ -315,6 +345,7 @@ void MainWindow::closeDocument(int index) {
     if (m_editorTabs->count() == 0) {
         m_centerStack->setCurrentWidget(m_welcomePage);
     }
+    updateDiagnostics();
 }
 
 QPlainTextEdit* MainWindow::currentEditor() const {

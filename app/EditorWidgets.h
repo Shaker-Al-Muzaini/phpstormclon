@@ -1,10 +1,15 @@
 #pragma once
 #include <QKeyEvent>
+#include <QHelpEvent>
+#include <QScrollBar>
+#include <QToolTip>
 
 #include "WorkspaceSupport.h"
+#include "forge/core/DiagnosticsModel.h"
 
 class ForgeCodeEditor;
 class ForgeSyntaxHighlighter;
+class DiagnosticMarkerBar;
 
 class LineNumberArea final : public QWidget {
 public:
@@ -19,19 +24,62 @@ private:
     ForgeCodeEditor* m_editor;
 };
 
+class DiagnosticMarkerBar final : public QWidget {
+public:
+    explicit DiagnosticMarkerBar(ForgeCodeEditor* editor);
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+
+private:
+    ForgeCodeEditor* m_editor;
+};
+
 class ForgeCodeEditor final : public QPlainTextEdit {
 public:
     explicit ForgeCodeEditor(QWidget* parent = nullptr)
         : QPlainTextEdit(parent), m_lineNumberArea(new LineNumberArea(this)) {
+        m_markerBar = new DiagnosticMarkerBar(this);
+        m_inspectionWidget = new QWidget(this);
+        auto* inspectionLayout = new QHBoxLayout(m_inspectionWidget);
+        inspectionLayout->setContentsMargins(4, 1, 4, 1);
+        inspectionLayout->setSpacing(2);
+        m_inspectionCount = new QLabel(m_inspectionWidget);
+        m_previousDiagnostic = new QToolButton(m_inspectionWidget);
+        m_previousDiagnostic->setText(QStringLiteral("↑"));
+        m_previousDiagnostic->setToolTip(QStringLiteral("Previous problem"));
+        m_nextDiagnostic = new QToolButton(m_inspectionWidget);
+        m_nextDiagnostic->setText(QStringLiteral("↓"));
+        m_nextDiagnostic->setToolTip(QStringLiteral("Next problem"));
+        inspectionLayout->addWidget(m_inspectionCount);
+        inspectionLayout->addWidget(m_previousDiagnostic);
+        inspectionLayout->addWidget(m_nextDiagnostic);
+        connect(m_previousDiagnostic, &QToolButton::clicked, this,
+                [this]() { navigateDiagnostics(-1); });
+        connect(m_nextDiagnostic, &QToolButton::clicked, this,
+                [this]() { navigateDiagnostics(1); });
+        m_inspectionWidget->adjustSize();
+        m_inspectionWidget->hide();
         connect(this, &QPlainTextEdit::blockCountChanged, this,
-                [this]() { updateLineNumberAreaWidth(); });
+                [this]() {
+                    updateLineNumberAreaWidth();
+                    m_markerBar->update();
+                });
         connect(this, &QPlainTextEdit::updateRequest, this,
-                [this](const QRect& rect, int dy) { updateLineNumberArea(rect, dy); });
+                [this](const QRect& rect, int dy) {
+                    updateLineNumberArea(rect, dy);
+                    m_markerBar->update();
+                });
         connect(this, &QPlainTextEdit::cursorPositionChanged, this,
                 [this]() { highlightCurrentLine(); });
+        connect(verticalScrollBar(), &QScrollBar::rangeChanged, this,
+                [this]() { updateDiagnosticOverlayGeometry(); });
+        connect(verticalScrollBar(), &QScrollBar::valueChanged, m_markerBar,
+                qOverload<>(&QWidget::update));
         connect(document(), &QTextDocument::contentsChanged, this,
                 [this]() { refreshFunctionFolds(); });
         updateLineNumberAreaWidth();
+        updateDiagnosticOverlayGeometry();
         highlightCurrentLine();
     }
 
@@ -41,6 +89,57 @@ public:
 
     QSyntaxHighlighter* syntaxHighlighter() const {
         return m_syntaxHighlighter;
+    }
+
+    void setDiagnostics(const QVector<forge::core::Diagnostic>& diagnostics) {
+        m_diagnostics = diagnostics;
+        updateDiagnosticSelections();
+        updateDiagnosticOverlayGeometry();
+        m_markerBar->update();
+        int errors = 0;
+        int warnings = 0;
+        for (const auto& diagnostic : m_diagnostics) {
+            errors += diagnostic.severity == forge::core::DiagnosticSeverity::Error;
+            warnings += diagnostic.severity == forge::core::DiagnosticSeverity::Warning;
+        }
+        if (m_diagnostics.isEmpty()) {
+            m_inspectionWidget->hide();
+        } else {
+            m_inspectionCount->setText(
+                QStringLiteral("✖ %1  ⚠ %2").arg(errors).arg(warnings));
+            m_inspectionCount->setToolTip(QStringLiteral("%1 errors, %2 warnings")
+                                              .arg(errors)
+                                              .arg(warnings));
+            m_inspectionWidget->adjustSize();
+            m_inspectionWidget->show();
+            m_inspectionWidget->raise();
+        }
+    }
+
+    void setDiagnosticColors(const QColor& error, const QColor& warning, const QColor& info) {
+        m_errorColor = error;
+        m_warningColor = warning;
+        m_infoColor = info;
+        updateDiagnosticSelections();
+        m_markerBar->update();
+    }
+
+    void paintDiagnosticMarkers(QPaintEvent* event) const {
+        QPainter painter(m_markerBar);
+        painter.fillRect(event->rect(), palette().color(QPalette::Base));
+        if (blockCount() <= 1) {
+            return;
+        }
+        for (const auto& diagnostic : m_diagnostics) {
+            const QColor color =
+                diagnostic.severity == forge::core::DiagnosticSeverity::Error
+                    ? m_errorColor
+                    : diagnostic.severity == forge::core::DiagnosticSeverity::Warning
+                          ? m_warningColor
+                          : m_infoColor;
+            const qreal y = (diagnostic.line - 1.0) / (blockCount() - 1) * m_markerBar->height();
+            painter.fillRect(QRectF(0, y, m_markerBar->width(), 3), color);
+        }
     }
 
     void setThemeFont(QFont font) {
@@ -164,9 +263,82 @@ protected:
         const QRect contents = contentsRect();
         m_lineNumberArea->setGeometry(
             QRect(contents.left(), contents.top(), lineNumberAreaWidth(), contents.height()));
+        updateDiagnosticOverlayGeometry();
+    }
+
+    bool event(QEvent* event) override {
+        if (event->type() == QEvent::ToolTip && !m_diagnostics.isEmpty()) {
+            auto* help = static_cast<QHelpEvent*>(event);
+            const QTextCursor cursor = cursorForPosition(help->pos());
+            const int line = cursor.blockNumber() + 1;
+            const int column = cursor.positionInBlock() + 1;
+            for (const auto& diagnostic : m_diagnostics) {
+                const bool withinRange =
+                    diagnostic.col == diagnostic.endCol
+                        ? column == diagnostic.col || column + 1 == diagnostic.col
+                        : column >= diagnostic.col &&
+                              (line < diagnostic.endLine ||
+                               (line == diagnostic.endLine && column <= diagnostic.endCol));
+                if (line == diagnostic.line && withinRange) {
+                    QToolTip::showText(help->globalPos(), diagnostic.message, this);
+                    return true;
+                }
+            }
+        }
+        return QPlainTextEdit::event(event);
     }
 
 private:
+    void updateDiagnosticOverlayGeometry() {
+        if (!m_markerBar || !m_inspectionWidget) {
+            return;
+        }
+        m_markerBar->setGeometry(qMax(0, verticalScrollBar()->width() - 4), 0, 4,
+                                 verticalScrollBar()->height());
+        m_markerBar->setVisible(!m_diagnostics.isEmpty());
+        m_markerBar->raise();
+        const int right = verticalScrollBar()->isVisible() ? verticalScrollBar()->width() : 4;
+        m_inspectionWidget->move(qMax(4, width() - m_inspectionWidget->width() - right - 10), 4);
+        m_inspectionWidget->raise();
+    }
+
+    void updateDiagnosticSelections() {
+        highlightCurrentLine();
+    }
+
+    void navigateDiagnostics(int direction) {
+        if (m_diagnostics.isEmpty()) {
+            return;
+        }
+        const int currentLine = textCursor().blockNumber() + 1;
+        int selected = direction > 0 ? 0 : m_diagnostics.size() - 1;
+        for (int index = 0; index < m_diagnostics.size(); ++index) {
+            if ((direction > 0 && m_diagnostics.at(index).line > currentLine) ||
+                (direction < 0 && m_diagnostics.at(index).line < currentLine)) {
+                selected = index;
+                break;
+            }
+        }
+        const auto& diagnostic = m_diagnostics.at(selected);
+        QTextBlock block = document()->findBlockByNumber(diagnostic.line - 1);
+        if (!block.isValid()) {
+            return;
+        }
+        QTextCursor cursor(block);
+        cursor.setPosition(block.position() +
+                           qBound(0, diagnostic.col - 1, block.text().size()));
+        setTextCursor(cursor);
+        centerCursor();
+        setFocus();
+    }
+
+    QColor severityColor(forge::core::DiagnosticSeverity severity) const {
+        return severity == forge::core::DiagnosticSeverity::Error
+                   ? m_errorColor
+                   : severity == forge::core::DiagnosticSeverity::Warning ? m_warningColor
+                                                                           : m_infoColor;
+    }
+
     void refreshFunctionFolds() {
         m_functionFolds.clear();
         m_collapsedFolds.clear();
@@ -311,11 +483,42 @@ private:
             selection.cursor.clearSelection();
             selections.append(selection);
         }
+        for (const auto& diagnostic : m_diagnostics) {
+            QTextBlock block = document()->findBlockByNumber(diagnostic.line - 1);
+            if (!block.isValid()) {
+                continue;
+            }
+            int start = block.position() + qBound(0, diagnostic.col - 1, block.text().size());
+            QTextBlock endBlock = document()->findBlockByNumber(diagnostic.endLine - 1);
+            if (!endBlock.isValid()) {
+                endBlock = block;
+            }
+            int end = endBlock.position() + qBound(0, diagnostic.endCol - 1, endBlock.text().size());
+            if (end <= start) {
+                if (start > block.position()) {
+                    --start;
+                }
+                end = qMin(block.position() + block.text().size(), start + 1);
+            }
+            QTextEdit::ExtraSelection selection;
+            selection.cursor = QTextCursor(document());
+            selection.cursor.setPosition(start);
+            selection.cursor.setPosition(qMax(start, end), QTextCursor::KeepAnchor);
+            selection.format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+            selection.format.setUnderlineColor(severityColor(diagnostic.severity));
+            selection.format.setToolTip(diagnostic.message);
+            selections.append(selection);
+        }
         setExtraSelections(selections);
         m_lineNumberArea->update();
     }
 
     LineNumberArea* m_lineNumberArea;
+    DiagnosticMarkerBar* m_markerBar = nullptr;
+    QWidget* m_inspectionWidget = nullptr;
+    QLabel* m_inspectionCount = nullptr;
+    QToolButton* m_previousDiagnostic = nullptr;
+    QToolButton* m_nextDiagnostic = nullptr;
     QSyntaxHighlighter* m_syntaxHighlighter = nullptr;
     QHash<int, int> m_functionFolds;
     QSet<int> m_collapsedFolds;
@@ -326,6 +529,10 @@ private:
     QColor m_activeLine = QColor(QStringLiteral("#26282E"));
     QColor m_gutterBorder = QColor(QStringLiteral("#2B2D30"));
     QColor m_activeLineForeground = QColor(QStringLiteral("#A8B2C1"));
+    QColor m_errorColor = QColor(QStringLiteral("#E06C75"));
+    QColor m_warningColor = QColor(QStringLiteral("#E5C07B"));
+    QColor m_infoColor = QColor(QStringLiteral("#61AFEF"));
+    QVector<forge::core::Diagnostic> m_diagnostics;
 };
 
 class ForgeSyntaxHighlighter final : public QSyntaxHighlighter {

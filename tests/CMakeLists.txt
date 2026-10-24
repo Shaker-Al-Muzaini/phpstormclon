@@ -20,13 +20,11 @@ target_link_libraries(forge_tests PRIVATE
     Qt6::Widgets
 )
 
-set_property(TARGET forge_tests PROPERTY CROSSCOMPILING_EMULATOR
-    "${CMAKE_COMMAND};-E;env;PATH=$<TARGET_FILE_DIR:Qt6::Core>;QT_QPA_PLATFORM=offscreen"
-)
-
 # The Windows offscreen plugin uses FreeType instead of the native font database.
+cmake_path(SET forge_qt_plugin_dir NORMALIZE "${Qt6_DIR}/../../../plugins")
 set(forge_test_environment
     "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    "QT_PLUGIN_PATH=set:${forge_qt_plugin_dir}"
     "QT_QPA_PLATFORM=set:offscreen")
 if(WIN32)
     file(TO_CMAKE_PATH "$ENV{WINDIR}/Fonts" forge_test_font_dir)

@@ -16,6 +16,11 @@
 #include "WorkspaceSupport.h"
 
 void MainWindow::setupWorkspaceFeatures() {
+    m_laravelLogDebounce = new QTimer(this);
+    m_laravelLogDebounce->setSingleShot(true);
+    m_laravelLogDebounce->setInterval(150);
+    connect(m_laravelLogDebounce, &QTimer::timeout, this,
+            &MainWindow::updateLaravelLogDiagnostics);
     connect(m_extensions, &forge::core::ExtensionManager::changed, this, [this]() {
         refreshExtensionBindings();
         refreshThemeMenus();
@@ -24,6 +29,9 @@ void MainWindow::setupWorkspaceFeatures() {
     });
     connect(m_fileWatcher, &forge::core::FileWatcher::fileChanged, this,
             [this](const QString& path) {
+                if (path == m_laravelLogPath) {
+                    m_laravelLogDebounce->start();
+                }
                 QFile file(path);
                 QByteArray hash;
                 if (file.open(QIODevice::ReadOnly))
@@ -45,6 +53,14 @@ void MainWindow::setupWorkspaceFeatures() {
                                      .arg(m_projectSearch->files().size()),
                                  2500);
     });
+    connect(m_fileWatcher, &forge::core::FileWatcher::directoryChanged, this,
+            [this](const QString& path) {
+                if (path == QFileInfo(m_laravelLogPath).absolutePath() &&
+                    QFileInfo::exists(m_laravelLogPath)) {
+                    m_fileWatcher->watchFile(m_laravelLogPath);
+                    m_laravelLogDebounce->start();
+                }
+            });
 }
 void MainWindow::refreshExtensionBindings() {
     if (!m_keymapManager) return;

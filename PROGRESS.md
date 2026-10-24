@@ -2,10 +2,21 @@
 
 ## Status
 
-**Current session: Native workspace redesign — Windows build succeeds; font regression fix awaiting CI**
+**Current session: Diagnostics and Problems — Windows app/tests build succeeds; Rust and C++ tests are being verified**
 **Product milestone: M1 — Shell and Docking (in progress)**
 
 ---
+
+## 2026-10-24 diagnostics and Problems
+
+- Added a Qt diagnostics model with per-file/source replacement, change signals, PHP lint output parsing, and bounded Laravel exception/stack-frame parsing.
+- Added asynchronous `php -l` checks on save with a five-second timeout, optional setting, PHP-not-found status, and phpintel precedence when syntax diagnostics are available.
+- Added the Problems dock with file/runtime grouping, severity icons, error/warning/current-file filters, source-line context, and navigation to source locations.
+- Added editor diagnostic underlines and tooltips, scrollbar markers, next/previous inspection controls, status-bar counts, and theme-token colors.
+- Added incremental tree-sitter-php syntax diagnostics through LSP notifications; a missing semicolon is reported at the previous token's end, and fixed documents clear diagnostics.
+- Laravel log updates are watched and debounced; parsing reads at most the latest 2 MiB.
+- Verification: Windows Qt/MSVC Debug build of `ForgeIDE.exe` and `forge_tests.exe` succeeds; Rust workspace tests pass. CTest now discovers and runs the suite using the Qt offscreen plugin path; 30/31 C++ tests pass, including all diagnostics and Problems tests and the application startup screenshot. The remaining failure is the existing `ServiceSupervisor.DisablesServiceAfterRestartLimit` test, outside this diagnostics change.
+- Not implemented/covered: PHP semantic diagnostics, quick fixes, and a timed end-to-end GUI assertion for the one-second acceptance threshold.
 
 ## 2026-10-23 workspace continuation
 

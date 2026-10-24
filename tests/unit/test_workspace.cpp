@@ -2,10 +2,12 @@
 
 #include <QApplication>
 #include <QCryptographicHash>
+#include <QComboBox>
 #include <QDockWidget>
 #include <QFile>
 #include <QFontInfo>
 #include <QFontMetricsF>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -16,11 +18,14 @@
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTextCursor>
+#include <QTreeWidget>
 #include <QTimer>
 
 #include "BrandSplash.h"
 #include "FindBar.h"
+#include "ProblemsPanel.h"
 #include "forge/core/ActionManager.h"
+#include "forge/core/DiagnosticsModel.h"
 #include "forge/core/FileWatcher.h"
 #include "forge/core/ServiceSupervisor.h"
 #include "forge/core/Settings.h"
@@ -157,6 +162,56 @@ TEST(BrandSplash, HasIndependentBrandArtwork) {
     const auto pixmap = BrandSplash::artwork();
     EXPECT_FALSE(pixmap.isNull());
     EXPECT_EQ(pixmap.width(), 1280);
+}
+
+TEST(ProblemsPanel, GroupsFiltersShowsContextAndActivatesLocations) {
+    QTemporaryDir directory;
+    const QString file = directory.filePath("problem.php");
+    put(file, "<?php\nfirst();\nsecond();\nthird();\nfourth();\nfifth();\n");
+    forge::core::DiagnosticsModel model;
+    ProblemsPanel panel(&model, false);
+    panel.setCurrentDocument(file, QString::fromUtf8(get(file)));
+    auto* status = panel.findChild<QLabel*>("ProblemsStatus");
+    auto* tree = panel.findChild<QTreeWidget*>("ProblemsTree");
+    auto* filter = panel.findChild<QComboBox*>();
+    ASSERT_NE(status, nullptr);
+    ASSERT_NE(tree, nullptr);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(status->text(), "No problems found");
+
+    const QVector<forge::core::Diagnostic> diagnostics{
+        {file, 3, 1, 3, 2, forge::core::DiagnosticSeverity::Error,
+         QStringLiteral("Unexpected token"), QStringLiteral("phpintel"),
+         QStringLiteral("php.syntax"), {}},
+        {file, 5, 1, 5, 2, forge::core::DiagnosticSeverity::Warning,
+         QStringLiteral("Deprecated call"), QStringLiteral("phpintel"),
+         QStringLiteral("php.deprecated"), {}}};
+    model.setFileDiagnostics(file, QStringLiteral("phpintel"), diagnostics);
+    ASSERT_EQ(tree->topLevelItemCount(), 1);
+    auto* fileGroup = tree->topLevelItem(0);
+    ASSERT_EQ(fileGroup->childCount(), 2);
+    EXPECT_FALSE(fileGroup->child(0)->icon(0).isNull());
+
+    tree->setCurrentItem(fileGroup->child(0));
+    auto* details = panel.findChild<QPlainTextEdit*>("ProblemDetails");
+    ASSERT_NE(details, nullptr);
+    EXPECT_TRUE(details->toPlainText().contains("Unexpected token"));
+    EXPECT_TRUE(details->toPlainText().contains(">    3 | second();"));
+
+    QSignalSpy activated(&panel, &ProblemsPanel::locationActivated);
+    ASSERT_TRUE(QMetaObject::invokeMethod(
+        tree, "itemDoubleClicked", Qt::DirectConnection,
+        Q_ARG(QTreeWidgetItem*, fileGroup->child(0)), Q_ARG(int, 0)));
+    ASSERT_EQ(activated.size(), 1);
+    EXPECT_EQ(activated.first().at(0).toString(), file);
+    EXPECT_EQ(activated.first().at(1).toInt(), 3);
+
+    filter->setCurrentIndex(1);
+    ASSERT_EQ(tree->topLevelItem(0)->childCount(), 1);
+    EXPECT_EQ(tree->topLevelItem(0)->child(0)->text(0), "Unexpected token");
+    filter->setCurrentIndex(2);
+    ASSERT_EQ(tree->topLevelItem(0)->childCount(), 1);
+    EXPECT_EQ(tree->topLevelItem(0)->child(0)->text(0), "Deprecated call");
 }
 
 TEST(Workspace, SplitViewsShareEditsAndSavingEitherViewUpdatesTheSameFile) {

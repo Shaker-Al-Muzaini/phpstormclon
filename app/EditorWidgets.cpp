@@ -18,3 +18,13 @@ void LineNumberArea::mousePressEvent(QMouseEvent* event) {
     }
     QWidget::mousePressEvent(event);
 }
+
+DiagnosticMarkerBar::DiagnosticMarkerBar(ForgeCodeEditor* editor)
+    : QWidget(editor->verticalScrollBar()), m_editor(editor) {
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+    setAttribute(Qt::WA_TranslucentBackground);
+}
+
+void DiagnosticMarkerBar::paintEvent(QPaintEvent* event) {
+    m_editor->paintDiagnosticMarkers(event);
+}

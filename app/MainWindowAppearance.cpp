@@ -9,6 +9,7 @@
 #include "ExtensionsDialog.h"
 #include "forge/core/ThemeCatalog.h"
 #include "MainWindow.h"
+#include "ProblemsPanel.h"
 #include "TerminalView.h"
 #include "WorkspaceSupport.h"
 
@@ -20,7 +21,6 @@ void MainWindow::applyTheme(const QString& name) {
         qWarning() << "[MainWindow] Cannot open theme resource:" << file.fileName();
         return;
     }
-
     QJsonParseError error;
     const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
     if (error.error != QJsonParseError::NoError || !document.isObject()) {
@@ -32,6 +32,20 @@ void MainWindow::applyTheme(const QString& name) {
     m_themeName = name;
     const QJsonObject ui = root.value(QStringLiteral("ui")).toObject();
     const QJsonObject metrics = root.value(QStringLiteral("metrics")).toObject();
+    const QColor errorColor(
+        themedColor(ui, QStringLiteral("error"), QStringLiteral("#E06C75")));
+    const QColor warningColor(
+        themedColor(ui, QStringLiteral("warning"), QStringLiteral("#E5C07B")));
+    const QColor infoColor(themedColor(ui, QStringLiteral("info"), QStringLiteral("#61AFEF")));
+    if (m_problemsPanel) {
+        m_problemsPanel->setSeverityColors(errorColor, warningColor, infoColor);
+    }
+    for (auto* editor : findChildren<QPlainTextEdit*>()) {
+        if (editor->property("forgeSourceEditor").toBool()) {
+            static_cast<ForgeCodeEditor*>(editor)->setDiagnosticColors(errorColor, warningColor,
+                                                                       infoColor);
+        }
+    }
     const QString background =
         themedColor(ui, QStringLiteral("background"), QStringLiteral("#1E1F22"));
     const QString elevated = themedColor(ui, QStringLiteral("backgroundElevated"), background);
@@ -116,7 +130,7 @@ void MainWindow::applyTheme(const QString& name) {
 
     const QColor iconForeground(foreground);
     const QColor iconAccent(accent);
-    const std::array<std::pair<QString, QString>, 10> actionIcons{
+    const std::array<std::pair<QString, QString>, 11> actionIcons{
         {{QStringLiteral("forge.file.openProject"), QStringLiteral("project")},
          {QStringLiteral("forge.file.open"), QStringLiteral("fileOpen")},
          {QStringLiteral("forge.file.save"), QStringLiteral("save")},
@@ -126,7 +140,8 @@ void MainWindow::applyTheme(const QString& name) {
          {QStringLiteral("forge.run.run"), QStringLiteral("run")},
          {QStringLiteral("forge.run.debug"), QStringLiteral("debug")},
          {QStringLiteral("forge.run.stop"), QStringLiteral("stop")},
-         {QStringLiteral("forge.vcs.status"), QStringLiteral("git")}}};
+         {QStringLiteral("forge.vcs.status"), QStringLiteral("git")},
+         {QStringLiteral("forge.window.problems"), QStringLiteral("problems")}}};
     for (const auto& [actionId, iconName] : actionIcons) {
         if (QAction* action = m_actions->action(actionId)) {
             action->setIcon(forgeIcon(iconName, iconForeground, iconAccent));

@@ -8,6 +8,7 @@
 #include <QStringList>
 
 #include "forge/core/ServiceSupervisor.h"
+#include "forge/core/DiagnosticsModel.h"
 
 class QFileSystemModel;
 class QFileIconProvider;
@@ -28,6 +29,7 @@ class QMenu;
 class QLineEdit;
 class FindBar;
 class QSplitter;
+class ProblemsPanel;
 
 namespace forge::core {
 class ActionManager;
@@ -82,6 +84,14 @@ private:
     void reloadDocument(QPlainTextEdit* editor);
     bool confirmExternalChange(QPlainTextEdit* editor, const QString& path);
     void updateDocumentInfo();
+    void updateDiagnostics();
+    void updateProblemsCurrentDocument();
+    void connectPhpIntelDocument(QPlainTextEdit* editor);
+    void sendPhpIntelDidOpen(QPlainTextEdit* editor);
+    void sendPhpIntelDidChange(QPlainTextEdit* editor);
+    void handlePhpIntelDiagnostics(const QJsonObject& params);
+    void runPhpSyntaxCheck(const QString& path);
+    void updateLaravelLogDiagnostics();
     void setupMenus();
     void setupToolbars();
     void setupToolWindows();
@@ -126,6 +136,7 @@ private:
 
     forge::core::ActionManager* m_actions;
     forge::core::ServiceSupervisor* m_supervisor;
+    forge::core::DiagnosticsModel m_diagnostics;
     std::unique_ptr<forge::core::RpcClient> m_phpIntelClient;
     std::unique_ptr<forge::core::KeymapManager> m_keymapManager;
     std::unique_ptr<QFileIconProvider> m_fileIconProvider;
@@ -140,6 +151,7 @@ private:
     QLabel* m_caretLabel = nullptr;
     QLabel* m_fileTypeLabel = nullptr;
     QLabel* m_projectLabel = nullptr;
+    QToolButton* m_problemCountButton = nullptr;
     QComboBox* m_runConfiguration = nullptr;
     QPlainTextEdit* m_terminalOutput = nullptr;
     QProcess* m_terminalProcess = nullptr;
@@ -163,6 +175,11 @@ private:
     forge::core::ProjectSearch* m_projectSearch = nullptr;
     forge::core::ExtensionManager* m_extensions = nullptr;
     forge::core::FileWatcher* m_fileWatcher = nullptr;
+    ProblemsPanel* m_problemsPanel = nullptr;
+    QTimer* m_laravelLogDebounce = nullptr;
+    QString m_laravelLogPath;
+    QHash<QString, QProcess*> m_phpLintProcesses;
+    bool m_phpLintEnabled = true;
     QMenu* m_themeMenu = nullptr;
     QToolButton* m_projectButton = nullptr;
     QToolButton* m_branchButton = nullptr;

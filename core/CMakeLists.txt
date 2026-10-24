@@ -12,6 +12,7 @@ add_library(forge_core STATIC
     include/forge/core/ExtensionManager.h
     include/forge/core/ThemeCatalog.h
     include/forge/core/PackageArchive.h
+    include/forge/core/DiagnosticsModel.h
     src/ProjectSearch.cpp
     src/ExtensionManager.cpp
     src/ThemeCatalog.cpp
@@ -25,6 +26,7 @@ add_library(forge_core STATIC
     src/ExtensionRegistry.cpp
     src/FileWatcher.cpp
     src/KeymapManager.cpp
+    src/DiagnosticsModel.cpp
 )
 
 target_include_directories(forge_core

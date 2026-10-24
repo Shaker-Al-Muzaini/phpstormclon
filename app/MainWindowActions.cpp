@@ -136,6 +136,14 @@ void MainWindow::setupActions() {
                 m_terminalOutput->setFocus();
             }
         });
+    m_actions->registerAction(QStringLiteral("forge.window.problems"), QStringLiteral("Problems"),
+                              [this]() {
+                                  if (auto* dock =
+                                          findChild<QDockWidget*>(QStringLiteral("ProblemsToolWindow"))) {
+                                      dock->setVisible(!dock->isVisible());
+                                      if (dock->isVisible()) dock->raise();
+                                  }
+                              });
     m_actions->registerAction(QStringLiteral("forge.window.settings"),
                               QStringLiteral("Settings..."), [this]() { showSettings(); });
     m_actions->registerAction(QStringLiteral("forge.window.plugins"),

@@ -67,6 +67,7 @@
     "forge.window.plugins": "Ctrl+Alt+Shift+P",
     "forge.window.projectTree": "Alt+1",
     "forge.window.terminal": "Alt+F12",
+    "forge.window.problems": "Ctrl+6",
     "forge.terminal.clear": "Ctrl+L",
     "forge.terminal.copy": "Ctrl+Shift+C",
     "forge.terminal.paste": "Ctrl+Shift+V",

@@ -26,6 +26,7 @@
     "forge.debug.stepOut": "Shift+F11",
     "forge.debug.toggleBreakpoint": "F9",
     "forge.window.terminal": "Ctrl+`",
+    "forge.window.problems": "Ctrl+Shift+M",
     "forge.window.settings": "Ctrl+,",
     "forge.window.plugins": "Ctrl+Shift+X",
     "forge.terminal.clear": "Ctrl+L",

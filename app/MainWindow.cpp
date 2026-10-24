@@ -69,6 +69,11 @@ MainWindow::MainWindow(forge::core::ActionManager* actions,
     }
 
     setupServices();
+    connect(&m_diagnostics, &forge::core::DiagnosticsModel::diagnosticsChanged, this,
+            &MainWindow::updateDiagnostics);
+    connect(&m_diagnostics, &forge::core::DiagnosticsModel::statusMessageChanged, this,
+            [this](const QString&) { updateDiagnostics(); });
+    updateDiagnostics();
     connect(m_supervisor, &forge::core::ServiceSupervisor::allServicesStopped, this, [this]() {
         if (m_servicesStopping) {
             m_servicesStopping = false;
@@ -171,6 +176,17 @@ void MainWindow::setupServices() {
                 }
                 if (!m_phpIntelClient) {
                     m_phpIntelClient = std::make_unique<forge::core::RpcClient>(process, this);
+                    connect(m_phpIntelClient.get(), &forge::core::RpcClient::notificationReceived,
+                            this, [this](const QString& method, const QJsonObject& params) {
+                                if (method == QStringLiteral("textDocument/publishDiagnostics")) {
+                                    handlePhpIntelDiagnostics(params);
+                                }
+                            });
+                }
+                for (auto* editor : findChildren<QPlainTextEdit*>()) {
+                    if (editor->property("forgeSourceEditor").toBool()) {
+                        sendPhpIntelDidOpen(editor);
+                    }
                 }
                 m_phpIntelClient->sendRequest(
                     QStringLiteral("$/ping"), {},

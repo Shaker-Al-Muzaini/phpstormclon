@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD | Decision | Reason`
 
 | Date | Decision | Reason |
 |------|----------|--------|
+| 2026-10-24 | Use tree-sitter-php for parser syntax diagnostics; retain optional async `php -l` on save | Provide responsive incremental syntax feedback without blocking the Qt UI, while preserving a native PHP interpreter check |
+| 2026-10-24 | Bound Laravel log parsing to the latest 2 MiB and debounce file-watch updates | Avoid unbounded memory/CPU use when runtime logs grow quickly |
 | 2026-10-21 | Qt 6.8 LTS (6.8.x) | Latest Qt LTS with 5-year support window; Qt Widgets chosen over QML for IDE maturity and dock system compatibility |
 | 2026-10-21 | Rust stable 1.99.1 (2026-10-13, latest stable at install time) | Latest stable at time of first build; Rust 2024 edition enabled |
 | 2026-10-21 | CMake 4.4.4 | Latest stable with full Corrosion v0.6 compatibility |

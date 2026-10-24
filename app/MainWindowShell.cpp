@@ -10,6 +10,7 @@
 #include "FindBar.h"
 #include "forge/core/ThemeCatalog.h"
 #include "MainWindow.h"
+#include "ProblemsPanel.h"
 #include "WorkspaceSupport.h"
 
 void MainWindow::setupMenus() {
@@ -26,6 +27,7 @@ void MainWindow::setupMenus() {
                    "forge.edit.deleteLine", "forge.edit.toggleComment", "forge.edit.moveLineUp",
                    "forge.edit.moveLineDown"});
     auto* view = menu("&View", {"forge.window.projectTree", "forge.window.terminal",
+                                "forge.window.problems",
                                 "forge.window.restoreLayout"});
     m_themeMenu = view->addMenu("Color Theme");
     refreshThemeMenus();
@@ -161,9 +163,13 @@ void MainWindow::setupToolbars() {
             button->setIcon(forgeIcon(entry.second, QColor("#A8ADB8"), QColor("#3574F0")));
             bar->addWidget(button);
             if (entry.first == "forge.window.projectTree" ||
-                entry.first == "forge.window.terminal") {
-                const auto dockName = entry.first.endsWith("projectTree") ? "ProjectToolWindow"
-                                                                          : "TerminalToolWindow";
+                entry.first == "forge.window.terminal" ||
+                entry.first == "forge.window.problems") {
+                const auto dockName =
+                    entry.first.endsWith("projectTree")
+                        ? "ProjectToolWindow"
+                        : entry.first.endsWith("problems") ? "ProblemsToolWindow"
+                                                           : "TerminalToolWindow";
                 if (auto* dock = findChild<QDockWidget*>(dockName)) {
                     action->setCheckable(true);
                     action->setChecked(!dock->isHidden());
@@ -177,7 +183,8 @@ void MainWindow::setupToolbars() {
             {"forge.navigate.findInFiles", "search"},
             {"forge.vcs.status", "git"},
             {"forge.window.plugins", "plugins"},
-            {"forge.window.terminal", "terminal"}});
+            {"forge.window.terminal", "terminal"},
+            {"forge.window.problems", "problems"}});
     stripe("RightStripe", Qt::RightToolBarArea, {{"forge.window.settings", "settings"}});
 }
 void MainWindow::setupToolWindows() {
@@ -225,6 +232,7 @@ void MainWindow::setupToolWindows() {
         syncSplitEditor();
         m_findBar->setEditor(currentEditor());
         updateEditorStatus();
+        updateProblemsCurrentDocument();
     });
     m_editorTabs->tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_editorTabs->tabBar(), &QWidget::customContextMenuRequested, this,
@@ -349,6 +357,43 @@ void MainWindow::setupToolWindows() {
             &MainWindow::setActiveTerminalSession);
     terminalDock->setWidget(panel);
     addDockWidget(Qt::BottomDockWidgetArea, terminalDock);
+    auto* problemsDock = new QDockWidget("Problems", this);
+    problemsDock->setObjectName("ProblemsToolWindow");
+    m_problemsPanel = new ProblemsPanel(
+        &m_diagnostics,
+        forge::core::Settings::instance()->value("diagnostics.phpLintOnSave", true).toBool(),
+        problemsDock);
+    m_phpLintEnabled =
+        forge::core::Settings::instance()->value("diagnostics.phpLintOnSave", true).toBool();
+    problemsDock->setWidget(m_problemsPanel);
+    addDockWidget(Qt::BottomDockWidgetArea, problemsDock);
+    tabifyDockWidget(terminalDock, problemsDock);
+    problemsDock->hide();
+    connect(m_problemsPanel, &ProblemsPanel::locationActivated, this,
+            [this](const QString& file, int line, int column) {
+                openFilePath(file);
+                if (auto* editor = currentEditor()) {
+                    const QTextBlock block = editor->document()->findBlockByNumber(line - 1);
+                    if (block.isValid()) {
+                        QTextCursor cursor(block);
+                        cursor.setPosition(block.position() +
+                                           qBound(0, column - 1, block.text().size()));
+                        editor->setTextCursor(cursor);
+                        editor->centerCursor();
+                        editor->setFocus();
+                    }
+                }
+            });
+    connect(m_problemsPanel, &ProblemsPanel::phpLintToggled, this, [this](bool enabled) {
+        m_phpLintEnabled = enabled;
+        forge::core::Settings::instance()->setValue("diagnostics.phpLintOnSave", enabled);
+        forge::core::Settings::instance()->save();
+        if (enabled) {
+            m_diagnostics.setStatusMessage(QString());
+        } else {
+            m_diagnostics.clearSource(QStringLiteral("php -l"));
+        }
+    });
     createTerminalSession();
     resizeDocks({projectDock}, {275}, Qt::Horizontal);
     resizeDocks({terminalDock}, {220}, Qt::Vertical);
@@ -377,6 +422,11 @@ void MainWindow::setupStatusBar() {
     m_encodingButton = button("EncodingStatus", "UTF-8");
     m_indentButton = button("IndentStatus", "4 spaces");
     m_readOnlyButton = button("ReadOnlyStatus", "RW");
+    m_problemCountButton = button("ProblemCountStatus", "✖ 0  ⚠ 0");
+    m_problemCountButton->setToolTip("Open Problems");
+    connect(m_problemCountButton, &QToolButton::clicked, this, [this]() {
+        m_actions->action(QStringLiteral("forge.window.problems"))->trigger();
+    });
     m_readOnlyButton->setToolTip("Toggle editor read-only mode");
     connect(m_readOnlyButton, &QToolButton::clicked, this, [this]() {
         if (auto* editor = currentEditor()) {
