@@ -154,9 +154,14 @@ jobs:
             if ($name -eq 'windows-graphite-100') {
               $forgeArguments += @('--splash-screenshot', "$forgeScreens/startup-brand.png")
             }
-            & ./build/windows-release/bin/ForgeIDE.exe @forgeArguments
-            if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$forgeScreens/$name.png")) {
-              throw "Workspace screenshot failed: $name"
+            # ForgeIDE is a Windows GUI executable. Explicitly wait before checking the image.
+            $forgeCapture = Start-Process -FilePath (Resolve-Path './build/windows-release/bin/ForgeIDE.exe').Path `
+              -ArgumentList $forgeArguments -WorkingDirectory $env:GITHUB_WORKSPACE -Wait -PassThru `
+              -RedirectStandardOutput "$forgeScreens/$name.stdout.log" `
+              -RedirectStandardError "$forgeScreens/$name.stderr.log"
+            if ($forgeCapture.ExitCode -ne 0 -or -not (Test-Path "$forgeScreens/$name.png")) {
+              Get-Content "$forgeScreens/$name.stdout.log", "$forgeScreens/$name.stderr.log" -ErrorAction SilentlyContinue
+              throw "Workspace screenshot failed: $name (exit $($forgeCapture.ExitCode))"
             }
           }
           Capture-ForgeWorkspace Graphite windows-graphite-100 1

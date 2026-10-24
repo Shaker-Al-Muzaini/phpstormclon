@@ -4,6 +4,7 @@ param(
     [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug',
     [ValidateRange(1,32)][int]$Jobs = 2,
     [switch]$Run,
+    [switch]$Fast,
     [switch]$SetupPhpTools,
     [switch]$Package
 )
@@ -32,9 +33,14 @@ try {
     }
     & (Join-Path $PSScriptRoot 'ensure-vcpkg-baseline.ps1')
     Invoke-ForgeStep 'cmake' @('--preset', $forgePreset, "-DCMAKE_PREFIX_PATH=$QtRoot")
-    Invoke-ForgeStep 'cmake' @('--build', '--preset', $forgePreset, '--parallel', "$Jobs")
-    Invoke-ForgeStep 'ctest' @('--preset', $forgePreset, '--output-on-failure')
-    Invoke-ForgeStep 'cargo' @('test', '--all', '--locked')
+    if ($Fast) {
+        # Reuse the existing build and compile the app plus its required services only.
+        Invoke-ForgeStep 'cmake' @('--build', '--preset', $forgePreset, '--target', 'forge_app', '--parallel', "$Jobs")
+    } else {
+        Invoke-ForgeStep 'cmake' @('--build', '--preset', $forgePreset, '--parallel', "$Jobs")
+        Invoke-ForgeStep 'ctest' @('--preset', $forgePreset, '--output-on-failure')
+        Invoke-ForgeStep 'cargo' @('test', '--all', '--locked')
+    }
     $forgeBin = Join-Path $forgeRoot "build\$forgePreset\bin"
     $forgeExe = Join-Path $forgeBin 'ForgeIDE.exe'
     Invoke-ForgeStep (Join-Path $QtRoot 'bin\windeployqt.exe') @('--no-translations', $forgeExe)

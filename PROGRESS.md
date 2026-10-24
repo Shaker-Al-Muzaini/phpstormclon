@@ -159,3 +159,9 @@
 
 ## Decisions Log
 See `docs/DECISIONS.md`
+
+### Hosted verification checkpoint — 6a86e23f
+
+- Windows Qt/MSVC build and test step pass: 46 tests passed, one external PHP-tool test skipped because its optional executable paths are not set on that runner. The same external-tool test passes locally with actual PHPStan/PHPCS.
+- Windows Rust and dependency/security audit jobs pass. The only failed step is post-build native screenshot capture. Its first file check occurred before the app's 700 ms capture timer; the workflow now explicitly waits for the Windows GUI process and records its output before checking images. A new hosted run verifies this workflow fix.
+- Added an explicit `build-local.ps1 -Fast` mode for incremental app/service builds without repeating local tests. Default builds and hosted checks still run their full tests.
