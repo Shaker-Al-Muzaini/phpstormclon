@@ -244,6 +244,7 @@ void MainWindow::handlePhpIntelDiagnostics(const QJsonObject& params) {
 }
 
 void MainWindow::runPhpSyntaxCheck(const QString& path) {
+    if (m_phpController && m_phpController->isReady()) return;
     if (!m_phpLintEnabled || path.isEmpty() ||
         QFileInfo(path).suffix().compare(QStringLiteral("php"), Qt::CaseInsensitive) != 0 ||
         path.endsWith(QStringLiteral(".blade.php"), Qt::CaseInsensitive)) {

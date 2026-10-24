@@ -67,7 +67,9 @@ void PhpLanguageClient::beginStart() {
                  QStringLiteral("Install the PHP language server and configure Node.js first."));
         return;
     }
-    if (!QDir().mkpath(m_configuration.storage)) {
+    if (!QDir().mkpath(m_configuration.storage) ||
+        (!m_configuration.globalStorage.isEmpty() &&
+         !QDir().mkpath(m_configuration.globalStorage))) {
         setState(false, QStringLiteral("Cannot create the PHP index cache directory."));
         return;
     }
@@ -164,7 +166,9 @@ void PhpLanguageClient::initialize() {
               QJsonObject{{QStringLiteral("positionEncodings"), QJsonArray{"utf-16"}}}}}},
         {QStringLiteral("initializationOptions"),
          QJsonObject{{QStringLiteral("storagePath"), m_configuration.storage},
-                     {QStringLiteral("globalStoragePath"), m_configuration.storage},
+                     {QStringLiteral("globalStoragePath"), m_configuration.globalStorage.isEmpty()
+                                                               ? m_configuration.storage
+                                                               : m_configuration.globalStorage},
                      {QStringLiteral("clearCache"), m_configuration.clearCache}}}};
     m_rpc->sendRequestValue(
         QStringLiteral("initialize"), parameters,

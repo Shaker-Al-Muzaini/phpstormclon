@@ -14,6 +14,9 @@ public:
     ~GitPanel() override;
     void setRoot(const QString& root);
     void refresh();
+    bool isBusy() const {
+        return m_process != nullptr;
+    }
 
 private:
     using Callback = std::function<void(int, const QByteArray&, const QByteArray&)>;

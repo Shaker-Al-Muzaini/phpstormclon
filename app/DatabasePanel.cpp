@@ -224,8 +224,10 @@ void DatabasePanel::display(const QJsonObject& result, bool schema) {
         }
     }
     m_results->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-    m_status->setText(QString("%1 rows · %2 affected%3")
-                          .arg(rows.size())
-                          .arg(result.value("rowsAffected").toDouble())
-                          .arg(result.value("truncated").toBool() ? " · result truncated" : ""));
+    const auto limit =
+        result.value("truncated").toBool() ? QString(" · result truncated") : QString();
+    m_status->setText(
+        columns.isEmpty()
+            ? QString("%1 affected%2").arg(result.value("rowsAffected").toDouble()).arg(limit)
+            : QString("%1 rows%2").arg(rows.size()).arg(limit));
 }

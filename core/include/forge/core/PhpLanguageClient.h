@@ -18,6 +18,7 @@ public:
         QString script;
         QString workspace;
         QString storage;
+        QString globalStorage;
         QString phpVersion = QStringLiteral("8.3.0");
         bool clearCache = false;
     };

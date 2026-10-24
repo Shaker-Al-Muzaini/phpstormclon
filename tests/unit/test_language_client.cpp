@@ -4,11 +4,13 @@
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTimer>
+#include <QUrl>
 
 #include "forge/core/PhpLanguageClient.h"
 #include "forge/core/RpcClient.h"
@@ -150,15 +152,17 @@ TEST(PhpLanguageClient, RealServerCompletesMembersFindsDefinitionsAndReportsSema
     if (definition.isArray()) ASSERT_FALSE(definition.toArray().isEmpty());
     const auto location =
         definition.isArray() ? definition.toArray().first().toObject() : definition.toObject();
-    EXPECT_EQ(location.value("uri").toString(location.value("targetUri").toString()),
-              client.uriForFile(person));
+    const auto definitionUri =
+        location.value("uri").toString(location.value("targetUri").toString());
+    EXPECT_EQ(QFileInfo(QUrl(definitionUri).toLocalFile()), QFileInfo(person));
 
     const auto duplicate = project.filePath("src/Duplicate.php");
     bool semanticError = false;
     bool cleared = false;
     QObject::connect(&client, &forge::core::PhpLanguageClient::diagnosticsReceived, &client,
                      [&](const QJsonObject& parameters) {
-                         if (parameters.value("uri").toString() != client.uriForFile(duplicate))
+                         if (QFileInfo(QUrl(parameters.value("uri").toString()).toLocalFile()) !=
+                             QFileInfo(duplicate))
                              return;
                          if (parameters.value("diagnostics").toArray().isEmpty())
                              cleared = semanticError;

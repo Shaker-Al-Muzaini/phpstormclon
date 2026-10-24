@@ -247,7 +247,7 @@ void TerminalOutputView::appendOutput(const QString& text) {
     if (text.isEmpty()) return;
     m_promptTail = (m_promptTail + text).right(4096);
     static const QRegularExpression prompt(
-        QStringLiteral("(?:^|[\\r\\n])(?:PS|sh) ([^\\r\\n]+)> ?$"));
+        QStringLiteral("(?:^|[\\r\\n]|>\\s*)(?:PS|sh) ([^>\\r\\n]+)> ?$"));
     const auto match = prompt.match(m_promptTail);
     if (match.hasMatch()) setWorkingDirectory(match.captured(1));
     const auto draft = currentInput();

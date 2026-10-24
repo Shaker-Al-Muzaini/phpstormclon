@@ -45,12 +45,14 @@ TEST(Terminal, AsynchronousOutputPreservesTheUnsubmittedDraft) {
 
 TEST(Terminal, CompletesQuotedArabicDirectoryAndEnterOnlyAcceptsPopup) {
     QTemporaryDir directory;
-    ASSERT_TRUE(QDir(directory.path()).mkdir(QString::fromUtf8("عربي folder")));
+    ASSERT_TRUE(QDir(directory.path()).mkdir("actual"));
+    ASSERT_TRUE(QDir(directory.filePath("actual")).mkdir(QString::fromUtf8("عربي folder")));
     TerminalOutputView terminal;
     terminal.resize(700, 240);
     terminal.show();
     terminal.setWorkingDirectory(directory.path());
-    terminal.appendOutput("PS> ");
+    terminal.appendOutput("PS " + directory.path() + "> ");
+    terminal.appendOutput("PS " + directory.filePath("actual") + "> ");
     terminal.insertPlainText("cd ");
     QSignalSpy submitted(&terminal, &TerminalOutputView::commandSubmitted);
     QTest::keyClick(&terminal, Qt::Key_Tab);

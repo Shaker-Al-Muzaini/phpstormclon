@@ -105,9 +105,10 @@ PhpEditorController::PhpEditorController(QWidget* window,
             &PhpEditorController::acceptCompletion);
     connect(&m_client, &forge::core::PhpLanguageClient::stateChanged, this,
             [this](bool ready, const QString& status) {
-                if (ready)
+                if (ready) {
                     m_diagnostics->clearSource("phpintel");
-                else
+                    m_diagnostics->clearSource("php -l");
+                } else
                     m_diagnostics->clearSource("PHP language server");
                 if (message) message(status);
             });
@@ -145,6 +146,8 @@ void PhpEditorController::setWorkspace(const QString& workspace, bool clearCache
         QString::fromLatin1(QCryptographicHash::hash(workspace.toUtf8(), QCryptographicHash::Sha256)
                                 .toHex()
                                 .left(24));
+    config.globalStorage =
+        QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/php/global";
     config.clearCache = clearCache;
     if (workspace.isEmpty() || !QFileInfo::exists(config.script) || config.node.isEmpty()) {
         m_client.stop();
@@ -205,7 +208,9 @@ QJsonObject PhpEditorController::parameters(QPlainTextEdit* editor) {
             {"position", point(editor->textCursor())}};
 }
 void PhpEditorController::complete(QPlainTextEdit* editor) {
-    if (!editor || !phpFile(editor->property("filePath").toString()) || !isReady()) return;
+    if (!editor || editor->isReadOnly() || !phpFile(editor->property("filePath").toString()) ||
+        !isReady())
+        return;
     m_client.cancel(m_completionRequest);
     const auto params = parameters(editor);
     const QPointer<QPlainTextEdit> target(editor);
@@ -250,14 +255,14 @@ void PhpEditorController::complete(QPlainTextEdit* editor) {
 }
 void PhpEditorController::acceptCompletion(const QModelIndex& index) {
     auto* editor = m_completionEditor.data();
-    if (!editor || editor->document()->revision() != m_completionRevision ||
+    if (!editor || editor->isReadOnly() || editor->document()->revision() != m_completionRevision ||
         editor->textCursor().position() != m_completionPosition)
         return;
     auto item = index.data(Qt::UserRole).toJsonObject();
     QPointer<QPlainTextEdit> target(editor);
     auto apply = [this, target, revision = m_completionRevision, caret = m_completionPosition,
                   start = m_completionStart](const QJsonObject& completion) {
-        if (!target || target->document()->revision() != revision ||
+        if (!target || target->isReadOnly() || target->document()->revision() != revision ||
             target->textCursor().position() != caret)
             return;
         auto edit = completion.value("textEdit").toObject();
@@ -405,7 +410,7 @@ void PhpEditorController::symbols() {
     search->setFocus();
 }
 void PhpEditorController::format(QPlainTextEdit* editor) {
-    if (!editor || !isReady()) return;
+    if (!editor || editor->isReadOnly() || !isReady()) return;
     const QPointer<QPlainTextEdit> target(editor);
     const int revision = editor->document()->revision();
     auto params = parameters(editor);
@@ -414,7 +419,8 @@ void PhpEditorController::format(QPlainTextEdit* editor) {
     m_client.request(
         "textDocument/formatting", params,
         [this, target, revision](const QJsonValue& result, const QJsonObject& error) {
-            if (!target || target->document()->revision() != revision) return;
+            if (!target || target->isReadOnly() || target->document()->revision() != revision)
+                return;
             if (!error.isEmpty()) {
                 if (message) message(error.value("message").toString());
                 return;
@@ -426,7 +432,8 @@ void PhpEditorController::format(QPlainTextEdit* editor) {
 void PhpEditorController::diagnostics(const QJsonObject& params) {
     const auto path = QUrl(params.value("uri").toString()).toLocalFile();
     for (const auto& data : std::as_const(m_documents)) {
-        if (data.path != path || !data.document || data.revision != data.document->revision())
+        if (QFileInfo(data.path) != QFileInfo(path) || !data.document ||
+            data.revision != data.document->revision())
             continue;
         if (params.contains("version") && params.value("version").toInt(-1) != data.version) return;
         QVector<forge::core::Diagnostic> diagnostics;
@@ -436,7 +443,7 @@ void PhpEditorController::diagnostics(const QJsonObject& params) {
             const auto start = range.value("start").toObject();
             const auto end = range.value("end").toObject();
             forge::core::Diagnostic diagnostic;
-            diagnostic.file = path;
+            diagnostic.file = data.path;
             diagnostic.line = start.value("line").toInt() + 1;
             diagnostic.col = start.value("character").toInt() + 1;
             diagnostic.endLine = end.value("line").toInt() + 1;
@@ -451,7 +458,7 @@ void PhpEditorController::diagnostics(const QJsonObject& params) {
                                       : forge::core::DiagnosticSeverity::Warning;
             diagnostics.append(diagnostic);
         }
-        m_diagnostics->setFileDiagnostics(path, "PHP language server", diagnostics);
+        m_diagnostics->setFileDiagnostics(data.path, "PHP language server", diagnostics);
         return;
     }
 }

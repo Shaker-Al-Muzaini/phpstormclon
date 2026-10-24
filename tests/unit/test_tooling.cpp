@@ -66,15 +66,15 @@ TEST(GitPanel, StagesUnstagesCommitsAndDiffsArabicPathsInARealRepository) {
     auto* files = panel.findChild<QTreeWidget*>("GitFiles");
     QTRY_COMPARE_WITH_TIMEOUT(files->topLevelItemCount(), 1, 5000);
     files->topLevelItem(0)->setSelected(true);
-    QTest::qWait(100);
+    QTRY_VERIFY_WITH_TIMEOUT(!panel.isBusy(), 5000);
     panel.findChild<QPushButton*>("GitStage")->click();
     QTRY_COMPARE_WITH_TIMEOUT(files->topLevelItem(0)->text(0), QString("A "), 5000);
     files->topLevelItem(0)->setSelected(true);
-    QTest::qWait(100);
+    QTRY_VERIFY_WITH_TIMEOUT(!panel.isBusy(), 5000);
     panel.findChild<QPushButton*>("GitUnstage")->click();
     QTRY_COMPARE_WITH_TIMEOUT(files->topLevelItem(0)->text(0), QString("??"), 5000);
     files->topLevelItem(0)->setSelected(true);
-    QTest::qWait(100);
+    QTRY_VERIFY_WITH_TIMEOUT(!panel.isBusy(), 5000);
     panel.findChild<QPushButton*>("GitStage")->click();
     QTRY_COMPARE_WITH_TIMEOUT(files->topLevelItem(0)->text(0), QString("A "), 5000);
     panel.findChild<QPlainTextEdit*>("GitCommitMessage")

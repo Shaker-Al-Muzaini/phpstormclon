@@ -2,7 +2,7 @@
 param([string]$InstallDirectory = (Join-Path $env:LOCALAPPDATA 'ForgeIDE\Forge IDE\language-servers'))
 $ErrorActionPreference = 'Stop'
 $forgeNode = Get-Command node -ErrorAction Stop
-$forgeNpm = Get-Command npm -ErrorAction Stop
+$forgeNpm = Get-Command npm.cmd -ErrorAction Stop
 $forgeNodeVersion = & $forgeNode.Source --version
 if ($LASTEXITCODE -ne 0 -or [int](($forgeNodeVersion -replace '^v','').Split('.')[0]) -lt 20) {
     throw 'PHP intelligence requires Node.js 20 or newer. Your existing installation was not changed.'
