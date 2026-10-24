@@ -6,7 +6,10 @@
 #include "EditorWidgets.h"
 #include "forge/core/FileWatcher.h"
 #include "forge/core/ProjectSearch.h"
+#include "GitPanel.h"
+#include "InspectionPanel.h"
 #include "MainWindow.h"
+#include "PhpEditorController.h"
 #include "TerminalView.h"
 #include "WorkspaceSupport.h"
 
@@ -34,6 +37,9 @@ void MainWindow::setProjectRoot(const QString& path) {
             QString::fromLatin1(saveState(kWindowLayoutVersion).toBase64()));
     m_projectRoot = info.absoluteFilePath();
     m_projectSearch->setRoot(m_projectRoot);
+    if (m_inspections) m_inspections->setRoot(m_projectRoot);
+    if (m_gitPanel) m_gitPanel->setRoot(m_projectRoot);
+    if (m_phpController) m_phpController->setWorkspace(m_projectRoot);
     m_laravelLogPath = QDir(m_projectRoot).filePath(QStringLiteral("storage/logs/laravel.log"));
     const QString logDirectory = QFileInfo(m_laravelLogPath).absolutePath();
     m_fileWatcher->watchDirectory(logDirectory);
@@ -324,6 +330,7 @@ void MainWindow::closeDocument(int index) {
             return;
         }
     }
+    if (m_phpController) m_phpController->closeDocument(editor);
     closePhpIntelDocument(editor);
     QWidget* removed = m_editorTabs->widget(index);
     m_editorTabs->removeTab(index);

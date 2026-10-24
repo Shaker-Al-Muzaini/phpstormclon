@@ -52,3 +52,7 @@ Format: `YYYY-MM-DD | Decision | Reason`
 | 2026-10-23 | Use Visual Studio Developer PowerShell via vswhere in CI and local helper | Avoid the failing third-party MSVC setup action and hard-coded Build Tools paths |
 
 - 2026-10-23: Windows offscreen tests explicitly use the installed Windows font directory. Qt 6.8.3's offscreen plugin uses FreeType; the native system FixedFont alias alone is insufficient there. Prefer installed monospace families for editor fallback and retain the fixed-pitch regression check.
+
+| 2026-10-24 | Use an explicitly installed local Intelephense 1.18.5 process for free PHP completion, definitions, symbols, diagnostics and formatting | A mature semantic provider improves PHP support now while the Rust parser remains a syntax fallback; the proprietary server is not redistributed, no global npm/project Composer changes occur, and no premium features are claimed |
+| 2026-10-24 | Keep terminal suggestions in the existing redirected shell backend | Gray history completion and async path suggestions are useful independently of a full terminal emulator; bounded history stays in memory, default prompts track cwd, and ConPTY remains a documented gap |
+| 2026-10-24 | Implement developer tooling through actual local processes and SQLx, with bounded results | Git operations use explicit selection and commit-message stdin; quality tools use project configuration; database credentials stay in memory and remote TLS is verified. SQLite has live coverage; MySQL/PostgreSQL remain unverified against live servers |

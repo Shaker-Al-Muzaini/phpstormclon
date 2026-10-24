@@ -1,8 +1,10 @@
 #pragma once
+#include <algorithm>
 #include <QHelpEvent>
 #include <QKeyEvent>
 #include <QScrollBar>
 #include <QToolTip>
+#include <utility>
 
 #include "forge/core/DiagnosticsModel.h"
 #include "WorkspaceSupport.h"
@@ -91,6 +93,10 @@ public:
 
     void setDiagnostics(const QVector<forge::core::Diagnostic>& diagnostics) {
         m_diagnostics = diagnostics;
+        std::stable_sort(m_diagnostics.begin(), m_diagnostics.end(),
+                         [](const auto& a, const auto& b) {
+                             return std::pair(a.line, a.col) < std::pair(b.line, b.col);
+                         });
         updateDiagnosticSelections();
         updateDiagnosticOverlayGeometry();
         m_markerBar->update();
@@ -263,17 +269,13 @@ protected:
     bool event(QEvent* event) override {
         if (event->type() == QEvent::ToolTip && !m_diagnostics.isEmpty()) {
             auto* help = static_cast<QHelpEvent*>(event);
-            const QTextCursor cursor = cursorForPosition(help->pos());
-            const int line = cursor.blockNumber() + 1;
-            const int column = cursor.positionInBlock() + 1;
+            const QTextCursor cursor =
+                cursorForPosition(viewport()->mapFromGlobal(help->globalPos()));
+            const auto position = std::pair(cursor.blockNumber() + 1, cursor.positionInBlock() + 1);
             for (const auto& diagnostic : m_diagnostics) {
-                const bool withinRange =
-                    diagnostic.col == diagnostic.endCol
-                        ? column == diagnostic.col || column + 1 == diagnostic.col
-                        : column >= diagnostic.col &&
-                              (line < diagnostic.endLine ||
-                               (line == diagnostic.endLine && column <= diagnostic.endCol));
-                if (line == diagnostic.line && withinRange) {
+                const auto start = std::pair(diagnostic.line, diagnostic.col);
+                const auto end = std::pair(diagnostic.endLine, diagnostic.endCol);
+                if (position >= start && (position < end || (start == end && position == start))) {
                     QToolTip::showText(help->globalPos(), diagnostic.message, this);
                     return true;
                 }
@@ -304,11 +306,15 @@ private:
         if (m_diagnostics.isEmpty()) {
             return;
         }
-        const int currentLine = textCursor().blockNumber() + 1;
-        int selected = direction > 0 ? 0 : m_diagnostics.size() - 1;
-        for (int index = 0; index < m_diagnostics.size(); ++index) {
-            if ((direction > 0 && m_diagnostics.at(index).line > currentLine) ||
-                (direction < 0 && m_diagnostics.at(index).line < currentLine)) {
+        const auto current =
+            std::pair(textCursor().blockNumber() + 1, textCursor().positionInBlock() + 1);
+        int selected = direction > 0 ? 0 : static_cast<int>(m_diagnostics.size()) - 1;
+        for (int step = 0; step < m_diagnostics.size(); ++step) {
+            const int index =
+                direction > 0 ? step : static_cast<int>(m_diagnostics.size()) - 1 - step;
+            const auto position =
+                std::pair(m_diagnostics.at(index).line, m_diagnostics.at(index).col);
+            if ((direction > 0 && position > current) || (direction < 0 && position < current)) {
                 selected = index;
                 break;
             }
@@ -319,7 +325,7 @@ private:
             return;
         }
         QTextCursor cursor(block);
-        cursor.setPosition(block.position() + qBound(0, diagnostic.col - 1, block.text().size()));
+        cursor.setPosition(block.position() + qBound(0, diagnostic.col - 1, (block.length() - 1)));
         setTextCursor(cursor);
         centerCursor();
         setFocus();
@@ -480,18 +486,18 @@ private:
             if (!block.isValid()) {
                 continue;
             }
-            int start = block.position() + qBound(0, diagnostic.col - 1, block.text().size());
+            int start = block.position() + qBound(0, diagnostic.col - 1, (block.length() - 1));
             QTextBlock endBlock = document()->findBlockByNumber(diagnostic.endLine - 1);
             if (!endBlock.isValid()) {
                 endBlock = block;
             }
             int end =
-                endBlock.position() + qBound(0, diagnostic.endCol - 1, endBlock.text().size());
+                endBlock.position() + qBound(0, diagnostic.endCol - 1, (endBlock.length() - 1));
             if (end <= start) {
                 if (start > block.position()) {
                     --start;
                 }
-                end = qMin(block.position() + block.text().size(), start + 1);
+                end = qMin(block.position() + (block.length() - 1), start + 1);
             }
             QTextEdit::ExtraSelection selection;
             selection.cursor = QTextCursor(document());

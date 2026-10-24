@@ -7,6 +7,8 @@ qt_add_executable(forge_tests
     unit/test_extensions.cpp
     unit/test_workspace.cpp
     unit/test_language_client.cpp
+    unit/test_terminal.cpp
+    unit/test_tooling.cpp
     ${CMAKE_SOURCE_DIR}/resources/resources.qrc
 )
 set_property(TARGET forge_tests PROPERTY AUTORCC ON)
@@ -50,4 +52,9 @@ add_test(NAME Startup.ResourcesAndScreenCapture
 set_tests_properties(Startup.ResourcesAndScreenCapture PROPERTIES
     ENVIRONMENT_MODIFICATION "${forge_test_environment}"
     TIMEOUT 20)
+if(FORGE_BUILD_RUST)
+    add_dependencies(forge_tests dbtools)
+    add_custom_command(TARGET forge_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:dbtools> $<TARGET_FILE_DIR:forge_tests>)
+endif()
 target_compile_definitions(forge_tests PRIVATE FORGE_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")

@@ -8,6 +8,7 @@
 
 #include "EditorWidgets.h"
 #include "MainWindow.h"
+#include "PhpEditorController.h"
 #include "ProblemsPanel.h"
 
 namespace {
@@ -117,12 +118,15 @@ void MainWindow::connectPhpIntelDocument(QPlainTextEdit* editor) {
                         lint->kill();
                         lint->deleteLater();
                     }
+                    m_diagnostics.clearFileSource(currentPath, "PHPStan");
+                    m_diagnostics.clearFileSource(currentPath, "PHP_CodeSniffer");
                     m_diagnostics.clearFileSource(currentPath, QStringLiteral("php -l"));
                     m_diagnostics.clearFileSource(currentPath, QStringLiteral("phpintel"));
                     timer->start();
                 });
         document->setProperty("phpIntelChangeConnected", true);
     }
+    if (m_phpController) m_phpController->attach(editor);
     sendPhpIntelDidOpen(editor);
 }
 
@@ -195,6 +199,7 @@ void MainWindow::sendPhpIntelDidChange(QPlainTextEdit* editor) {
 }
 
 void MainWindow::handlePhpIntelDiagnostics(const QJsonObject& params) {
+    if (m_phpController && m_phpController->isReady()) return;
     const QString uri = params.value(QStringLiteral("uri")).toString();
     const QString file = QUrl(uri).toLocalFile();
     if (file.isEmpty()) {

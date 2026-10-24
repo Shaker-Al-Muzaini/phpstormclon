@@ -1,7 +1,7 @@
 [advisories]
 version = 2
 ignore = [
-    { id = "RUSTSEC-2023-0071", reason = "The advisory has no patched rsa release as of 2026-09-12. rsa is only transitive through sqlx-mysql in dbtools; no code in this workspace performs RSA private-key operations. Reassess when database connections are implemented." },
+    { id = "RUSTSEC-2023-0071", reason = "Reassessed for dbtools connections: SQLx 0.8.6 uses RsaPublicKey encryption only, never RSA private-key decryption/signing. Remote connections require verified TLS; plaintext is explicit loopback only. Track upstream RUSTSEC-2023-0071 until a fixed rsa release is available." },
 ]
 
 [licenses]

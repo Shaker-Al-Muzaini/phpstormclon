@@ -30,16 +30,18 @@ void MainWindow::setupMenus() {
                                 "forge.window.problems", "forge.window.restoreLayout"});
     m_themeMenu = view->addMenu("Color Theme");
     refreshThemeMenus();
-    menu("&Navigate",
-         {"forge.navigate.searchEverywhere", "forge.navigate.goToFile",
-          "forge.navigate.recentFiles", "forge.navigate.goToLine", "forge.navigate.find",
-          "forge.navigate.findNext", "forge.navigate.findPrevious", "forge.navigate.localReplace",
-          "forge.navigate.findInFiles"});
-    menu("&Code", {"forge.edit.toggleComment", "forge.code.insertSnippet"});
+    menu("&Navigate", {"forge.navigate.searchEverywhere", "forge.navigate.goToFile",
+                       "forge.navigate.recentFiles", "forge.navigate.definition",
+                       "forge.navigate.symbols", "forge.navigate.goToLine", "forge.navigate.find",
+                       "forge.navigate.findNext", "forge.navigate.findPrevious",
+                       "forge.navigate.localReplace", "forge.navigate.findInFiles"});
+    menu("&Code", {"forge.edit.toggleComment", "forge.code.insertSnippet", "forge.code.complete",
+                   "forge.code.format"});
     menu("&Run", {"forge.run.run", "forge.run.debug", "forge.run.profile", "forge.debug.stepOver",
                   "forge.debug.stepInto", "forge.debug.stepOut", "forge.run.stop"});
     menu("&Tools", {"forge.window.terminal", "forge.terminal.new", "forge.terminal.clear",
-                    "forge.window.plugins", "forge.window.settings"});
+                    "forge.tools.inspect", "forge.window.database", "forge.php.configure",
+                    "forge.php.reindex", "forge.window.plugins", "forge.window.settings"});
     menu("&Git", {"forge.vcs.status"});
     menu("&Window", {"forge.window.splitRight", "forge.window.splitDown", "forge.window.closeSplit",
                      "forge.window.restoreLayout", "forge.window.settings"});

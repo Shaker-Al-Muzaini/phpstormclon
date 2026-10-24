@@ -3,6 +3,7 @@
 
 #include "DocumentCodec.h"
 #include "EditorWidgets.h"
+#include "GitPanel.h"
 #include "MainWindow.h"
 #include "TerminalView.h"
 #include "WorkspaceSupport.h"
@@ -72,6 +73,7 @@ void MainWindow::createTerminalSession() {
     }
 
     auto* output = new TerminalOutputView(m_terminalTabs);
+    output->setSharedHistory(m_terminalHistory);
     output->setObjectName(QStringLiteral("TerminalOutput"));
     output->setMaximumBlockCount(5000);
     output->setLineWrapMode(QPlainTextEdit::NoWrap);
@@ -199,6 +201,7 @@ void MainWindow::startTerminal(QProcess* process, QPlainTextEdit* output) {
 
     const QString workingDirectory = m_projectRoot.isEmpty() ? QDir::currentPath() : m_projectRoot;
     process->setWorkingDirectory(workingDirectory);
+    static_cast<TerminalOutputView*>(output)->setWorkingDirectory(workingDirectory);
 #ifdef Q_OS_WIN
     process->start("powershell.exe",
                    {"-NoLogo", "-NoProfile", "-NoExit", "-Command",
@@ -206,6 +209,9 @@ void MainWindow::startTerminal(QProcess* process, QPlainTextEdit* output) {
                     "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding; "
                     "$OutputEncoding = [Console]::OutputEncoding"});
 #else
+    auto environment = QProcessEnvironment::systemEnvironment();
+    environment.insert("PS1", "sh $PWD> ");
+    process->setProcessEnvironment(environment);
     process->start("/bin/sh", {"-i"});
 #endif
 }
@@ -254,25 +260,11 @@ void MainWindow::appendTerminalOutput(const QString& text, QPlainTextEdit* outpu
 }
 
 void MainWindow::showGitStatus() {
-    if (m_projectRoot.isEmpty()) {
-        statusBar()->showMessage(QStringLiteral("Open a project before checking Git status."),
-                                 4000);
-        return;
-    }
-    const QString gitExecutable = QStandardPaths::findExecutable(QStringLiteral("git.exe"));
-    if (gitExecutable.isEmpty()) {
-        QMessageBox::warning(this, QStringLiteral("Git Not Found"),
-                             QStringLiteral("Add git.exe to PATH, then restart Forge IDE."));
-        return;
-    }
-    if (auto* dock = findChild<QDockWidget*>(QStringLiteral("TerminalToolWindow"))) {
+    if (auto* dock = findChild<QDockWidget*>("GitToolWindow")) {
         dock->show();
         dock->raise();
+        m_gitPanel->refresh();
     }
-    runExternalCommand(gitExecutable,
-                       {QStringLiteral("-C"), m_projectRoot, QStringLiteral("status"),
-                        QStringLiteral("--short"), QStringLiteral("--branch")},
-                       QStringLiteral("Git status"));
 }
 
 void MainWindow::runExternalCommand(const QString& program, const QStringList& arguments,

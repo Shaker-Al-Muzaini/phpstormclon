@@ -4,6 +4,7 @@ param(
     [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug',
     [ValidateRange(1,32)][int]$Jobs = 2,
     [switch]$Run,
+    [switch]$SetupPhpTools,
     [switch]$Package
 )
 $ErrorActionPreference = 'Stop'
@@ -47,5 +48,6 @@ try {
         Compress-Archive -Path (Join-Path $forgePackage '*') -DestinationPath $forgeZip -Force
         Write-Host "Portable build: $forgeZip"
     }
+    if ($SetupPhpTools) { & (Join-Path $PSScriptRoot 'setup-php-intelligence.ps1') }
     if ($Run) { Start-Process -FilePath $forgeExe -WorkingDirectory $forgeRoot }
 } finally { Pop-Location }

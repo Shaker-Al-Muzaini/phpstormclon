@@ -2,10 +2,23 @@
 
 ## Status
 
-**Current session: Developer tooling continuation — foundation built/tested; UI and developer-tool integration in progress**
+**Current session: PHP intelligence, terminal suggestions and developer tooling — local integration checks pass; Windows CI pending**
 **Product milestone: M1 — Shell and Docking (in progress)**
 
 ---
+
+## 2026-10-24 intelligence and developer tools
+
+- Continued main `5551471`; retained native Qt/C++ + Rust and Windows Qt 6.8.3/MSVC/Rust pins.
+- Added local Intelephense LSP integration: persistent project cache, PHP/Composer source change polling off the UI thread, async member completion, completion resolve/import edits, Ctrl+Space, Ctrl+B/F12/Ctrl+click definitions, Ctrl+Alt+N symbols and Ctrl+Alt+L formatting. Stale completion/definition/formatting replies are rejected; validated edits form one undo step. The server is installed explicitly into app data, not bundled; native syntax diagnostics remain the fallback. Telemetry configuration is disabled.
+- Terminal: gray history/catalog suffix, Right to accept, Tab/Ctrl+Space path/history popup, quoted Arabic paths, shared bounded in-memory history, draft preservation when output arrives, and protected transcript selection/copy. Enter accepts an open popup without executing it. Default shell prompts update completion's working directory. This remains redirected QProcess, **not ConPTY/PTY emulation**; custom prompts and interactive full-screen terminal programs are not covered.
+- Real Git tool window: async repository-root detection, NUL-delimited status (including rename paths), staged/working diff, selected-file stage/unstage (including unborn repositories), UTF-8 commit messages via stdin. No push performed. Command output/time limits are enforced.
+- Database tool window + Rust SQLx stdio service: SQLite/MySQL/PostgreSQL connections, schema tables/views, SQL editor, results, nulls, binary size markers, default read-only sessions and explicit reconnect for writes. Limits: one statement, 500 rows, 4 MiB results and 15-second queries. Passwords are not saved; remote connections require verified TLS, explicit plaintext is loopback-only. **SQLite is tested live; MySQL/PostgreSQL live-server verification remains open.** Unsupported result types require explicit SQL casts to text. Cancellation cannot guarantee rollback of an already committed write.
+- Code Quality tool window runs the project's PHPStan/PHP_CodeSniffer configuration asynchronously, imports real JSON findings into Problems, handles nonzero finding exit codes, and rejects findings for edited/changed open buffers. No Composer dependencies are installed automatically. Formatting is supplied by the local PHP language server, not PHPCBF.
+- Fixed previous-problem navigation to select the nearest earlier position and multi-line tooltip coordinate/range handling.
+- Verified locally: Qt 6.4 Linux UI-only build, **46/46 CTest** before adding the external-tool integration test; the additional real PHPStan 2.3.1 / PHP_CodeSniffer 4.0.4 integration test also passes. Tests include real editor completion/undo/cross-file definition, SQLite UI query, Arabic Git stage/unstage/commit/diff, history/path suggestions, stale lint invalidation and save safety. DB Rust unit tests and clippy pass. Full final test totals and hosted Windows CI will be recorded below.
+- Limits: no speed/large-project benchmark or 90% feature-parity claim; Laravel magic inference can require project stubs. Premium refactoring is not implemented. The server requires a separate Node.js 20+ installation. The initial real-server tests take roughly 33 seconds on this isolated Linux environment; this is not an indexing benchmark.
+
 
 ## 2026-10-24 developer tooling continuation
 

@@ -30,6 +30,9 @@ class QLineEdit;
 class FindBar;
 class QSplitter;
 class ProblemsPanel;
+class PhpEditorController;
+class GitPanel;
+class InspectionPanel;
 
 namespace forge::core {
 class ActionManager;
@@ -68,6 +71,7 @@ private slots:
 
 private:
     void setupActions();
+    void setupIntelligence();
     void setupWorkspaceFeatures();
     void showQuickOpen(bool actionsOnly = false);
     void splitEditor(Qt::Orientation orientation);
@@ -160,6 +164,7 @@ private:
     QProcess* m_terminalProcess = nullptr;
     QList<QPlainTextEdit*> m_terminalViews;
     QList<QProcess*> m_terminalProcesses;
+    std::shared_ptr<QStringList> m_terminalHistory = std::make_shared<QStringList>();
     QHash<QProcess*, QStringList> m_pendingTerminalCommands;
     QProcess* m_commandProcess = nullptr;
     QTcpServer* m_debugServer = nullptr;
@@ -172,6 +177,9 @@ private:
     qint64 m_profileStartedAt = 0;
     QString m_projectRoot;
     QString m_themeName = QStringLiteral("Graphite");
+    InspectionPanel* m_inspections = nullptr;
+    GitPanel* m_gitPanel = nullptr;
+    PhpEditorController* m_phpController = nullptr;
     FindBar* m_findBar = nullptr;
     QSplitter* m_editorSplitter = nullptr;
     QPlainTextEdit* m_splitEditor = nullptr;

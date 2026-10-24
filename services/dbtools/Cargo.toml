@@ -17,4 +17,9 @@ tracing.workspace    = true
 tracing-subscriber.workspace = true
 anyhow.workspace     = true
 # sqlx for database access (MIT/Apache-2.0)
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "mysql", "postgres"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls-ring", "sqlite", "mysql", "postgres"] }
+
+futures-util.workspace = true
+tokio-util.workspace = true
+bytes.workspace = true
+url = "2.5"

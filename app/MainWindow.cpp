@@ -8,6 +8,7 @@
 #include "forge/core/ExtensionManager.h"
 #include "forge/core/FileWatcher.h"
 #include "forge/core/ProjectSearch.h"
+#include "PhpEditorController.h"
 #include "TerminalView.h"
 #include "WorkspaceSupport.h"
 
@@ -29,6 +30,7 @@ MainWindow::MainWindow(forge::core::ActionManager* actions,
     m_fileWatcher = new forge::core::FileWatcher(this);
     setupActions();
     setupToolWindows();
+    setupIntelligence();
     setupMenus();
     setupToolbars();
     setupStatusBar();
@@ -86,6 +88,8 @@ MainWindow::MainWindow(forge::core::ActionManager* actions,
 
 MainWindow::~MainWindow() {
     qApp->removeEventFilter(this);
+    delete m_phpController;
+    m_phpController = nullptr;
     // Stop child-process callbacks while this class's members are still alive.
     // QObject's child destruction happens after C++ members have been destroyed.
     m_supervisor->disconnect(this);

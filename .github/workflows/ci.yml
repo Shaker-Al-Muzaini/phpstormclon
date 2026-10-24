@@ -102,6 +102,17 @@ jobs:
           ./tools/ensure-vcpkg-baseline.ps1
           "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
+      - name: Install isolated PHP server for real integration tests
+        shell: pwsh
+        run: |
+          $forgeNodeVersion = node --version
+          if ([int](($forgeNodeVersion -replace '^v','').Split('.')[0]) -lt 20) { throw 'Node.js 20+ required' }
+          npm install --prefix build/test-lsp --ignore-scripts --save-exact --no-audit --no-fund intelephense@1.18.5
+          if ($LASTEXITCODE -ne 0) { throw 'PHP server test installation failed' }
+          "FORGE_TEST_LSP_SCRIPT=$env:GITHUB_WORKSPACE/build/test-lsp/node_modules/intelephense/lib/intelephense.js" >> $env:GITHUB_ENV
+          "FORGE_REQUIRE_LSP_TESTS=1" >> $env:GITHUB_ENV
+          "FORGE_REQUIRE_DB_TESTS=1" >> $env:GITHUB_ENV
+
       - name: Configure CMake
         run: cmake --preset windows-release "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR"
 
