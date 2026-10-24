@@ -5,8 +5,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QHBoxLayout>
 #include <QHash>
+#include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QPainter>
@@ -22,8 +22,8 @@ ProblemsPanel::ProblemsPanel(forge::core::DiagnosticsModel* model, bool phpLintE
     auto* controls = new QHBoxLayout;
     controls->addWidget(new QLabel(QStringLiteral("Problems"), this));
     m_filter = new QComboBox(this);
-    m_filter->addItems({QStringLiteral("All"), QStringLiteral("Errors"),
-                        QStringLiteral("Warnings"), QStringLiteral("Current file")});
+    m_filter->addItems({QStringLiteral("All"), QStringLiteral("Errors"), QStringLiteral("Warnings"),
+                        QStringLiteral("Current file")});
     controls->addWidget(m_filter);
     auto* phpLint = new QCheckBox(QStringLiteral("PHP syntax check on save"), this);
     phpLint->setObjectName(QStringLiteral("PhpLintOnSave"));
@@ -56,18 +56,16 @@ ProblemsPanel::ProblemsPanel(forge::core::DiagnosticsModel* model, bool phpLintE
             &ProblemsPanel::refresh);
     connect(m_model, &forge::core::DiagnosticsModel::statusMessageChanged, this,
             &ProblemsPanel::refresh);
-    connect(m_tree, &QTreeWidget::itemSelectionChanged, this, [this]() {
-        showDetails(m_tree->currentItem());
+    connect(m_tree, &QTreeWidget::itemSelectionChanged, this,
+            [this]() { showDetails(m_tree->currentItem()); });
+    connect(m_tree, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int) {
+        if (!item || item->data(0, Qt::UserRole + 2).toString().isEmpty()) {
+            return;
+        }
+        emit locationActivated(item->data(0, Qt::UserRole + 2).toString(),
+                               item->data(0, Qt::UserRole + 3).toInt(),
+                               item->data(0, Qt::UserRole + 4).toInt());
     });
-    connect(m_tree, &QTreeWidget::itemDoubleClicked, this,
-            [this](QTreeWidgetItem* item, int) {
-                if (!item || item->data(0, Qt::UserRole + 2).toString().isEmpty()) {
-                    return;
-                }
-                emit locationActivated(item->data(0, Qt::UserRole + 2).toString(),
-                                       item->data(0, Qt::UserRole + 3).toInt(),
-                                       item->data(0, Qt::UserRole + 4).toInt());
-            });
     connect(phpLint, &QCheckBox::toggled, this, &ProblemsPanel::phpLintToggled);
     refresh();
 }
@@ -102,10 +100,9 @@ void ProblemsPanel::refresh() {
     QHash<QString, QTreeWidgetItem*> fileRoots;
     int shown = 0;
     for (const auto& diagnostic : all) {
-        const bool currentFile =
-            !m_currentFile.isEmpty() &&
-            QDir::cleanPath(QFileInfo(diagnostic.file).absoluteFilePath()) ==
-                QDir::cleanPath(QFileInfo(m_currentFile).absoluteFilePath());
+        const bool currentFile = !m_currentFile.isEmpty() &&
+                                 QDir::cleanPath(QFileInfo(diagnostic.file).absoluteFilePath()) ==
+                                     QDir::cleanPath(QFileInfo(m_currentFile).absoluteFilePath());
         if ((filter == 1 && diagnostic.severity != forge::core::DiagnosticSeverity::Error) ||
             (filter == 2 && diagnostic.severity != forge::core::DiagnosticSeverity::Warning) ||
             (filter == 3 && !currentFile)) {
@@ -133,10 +130,10 @@ void ProblemsPanel::refresh() {
             group = fileRoots.value(diagnostic.file);
         }
         auto* item = new QTreeWidgetItem(
-            group, {diagnostic.message,
-                    QStringLiteral("%1:%2:%3").arg(QFileInfo(diagnostic.file).fileName())
-                        .arg(diagnostic.line)
-                        .arg(diagnostic.col)});
+            group, {diagnostic.message, QStringLiteral("%1:%2:%3")
+                                            .arg(QFileInfo(diagnostic.file).fileName())
+                                            .arg(diagnostic.line)
+                                            .arg(diagnostic.col)});
         item->setIcon(0, severityIcon(diagnostic.severity));
         item->setToolTip(0, diagnostic.message);
         item->setData(0, Qt::UserRole, diagnostic.message);
@@ -150,8 +147,9 @@ void ProblemsPanel::refresh() {
 
         for (const auto& frame : diagnostic.frames) {
             auto* frameItem = new QTreeWidgetItem(
-                item, {QStringLiteral("↳ %1").arg(frame.label),
-                       QStringLiteral("%1:%2").arg(QFileInfo(frame.file).fileName()).arg(frame.line)});
+                item,
+                {QStringLiteral("↳ %1").arg(frame.label),
+                 QStringLiteral("%1:%2").arg(QFileInfo(frame.file).fileName()).arg(frame.line)});
             frameItem->setData(0, Qt::UserRole + 2, frame.file);
             frameItem->setData(0, Qt::UserRole + 3, frame.line);
             frameItem->setData(0, Qt::UserRole + 4, 1);
@@ -213,10 +211,9 @@ void ProblemsPanel::showDetails(QTreeWidgetItem* item) {
 }
 
 QIcon ProblemsPanel::severityIcon(forge::core::DiagnosticSeverity severity) const {
-    const QColor color = severity == forge::core::DiagnosticSeverity::Error
-                             ? m_errorColor
-                             : severity == forge::core::DiagnosticSeverity::Warning ? m_warningColor
-                                                                                     : m_infoColor;
+    const QColor color = severity == forge::core::DiagnosticSeverity::Error     ? m_errorColor
+                         : severity == forge::core::DiagnosticSeverity::Warning ? m_warningColor
+                                                                                : m_infoColor;
     QPixmap pixmap(16, 16);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);

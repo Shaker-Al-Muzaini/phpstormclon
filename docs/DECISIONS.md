@@ -6,6 +6,9 @@ Format: `YYYY-MM-DD | Decision | Reason`
 
 | Date | Decision | Reason |
 |------|----------|--------|
+| 2026-10-24 | Use a local LSP PHP provider for semantic completion and indexing; retain Rust syntax fallback | The current parser only supplies syntax recovery regions. A standard client can provide real symbol/type intelligence without pretending regex matches are semantic analysis. Intelephense's free features cover the requested operations; its server is installed explicitly, not redistributed. |
+| 2026-10-24 | Keep terminal suggestions local and execution explicit | History ghost text and completion must never submit a suggested command. Accept with Right/Tab, then execute separately with Enter. |
+| 2026-10-24 | Add bounded developer tools with in-memory database credentials | User requested Git diff/commits, SQL tools and PHP analyzers. Use argument-based subprocesses/RPC, asynchronous UI, database read-only transactions, row/time limits and no automatic project dependency changes. |
 | 2026-10-24 | Use tree-sitter-php for parser syntax diagnostics; retain optional async `php -l` on save | Provide responsive incremental syntax feedback without blocking the Qt UI, while preserving a native PHP interpreter check |
 | 2026-10-24 | Bound Laravel log parsing to the latest 2 MiB and debounce file-watch updates | Avoid unbounded memory/CPU use when runtime logs grow quickly |
 | 2026-10-21 | Qt 6.8 LTS (6.8.x) | Latest Qt LTS with 5-year support window; Qt Widgets chosen over QML for IDE maturity and dock system compatibility |

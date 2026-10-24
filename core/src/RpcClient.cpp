@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QJsonParseError>
 #include <QJsonValue>
+#include <QTimer>
 
 namespace forge::core {
 
@@ -23,6 +24,15 @@ RpcClient::RpcClient(QProcess* serviceProcess, QObject* parent)
 
 int RpcClient::sendRequest(const QString& method, const QJsonObject& params,
                            ResponseCallback callback) {
+    return sendRequestValue(
+        method, params,
+        [callback = std::move(callback)](const QJsonValue& result, const QJsonObject& error) {
+            if (callback) callback(result.toObject(), error);
+        });
+}
+
+int RpcClient::sendRequestValue(const QString& method, const QJsonObject& params,
+                                ValueResponseCallback callback, int timeoutMs) {
     const int id = m_nextId.fetch_add(1);
     QJsonObject request;
     request[QStringLiteral("jsonrpc")] = QStringLiteral("2.0");
@@ -46,7 +56,7 @@ int RpcClient::sendRequest(const QString& method, const QJsonObject& params,
     if (m_process->write(message) != message.size()) {
         auto pending = m_pending.find(id);
         if (pending != m_pending.end()) {
-            ResponseCallback failedCallback = std::move(pending.value());
+            ValueResponseCallback failedCallback = std::move(pending.value());
             m_pending.erase(pending);
             if (failedCallback) {
                 failedCallback({}, {{QStringLiteral("code"), -32000},
@@ -54,16 +64,48 @@ int RpcClient::sendRequest(const QString& method, const QJsonObject& params,
             }
         }
     }
+    QTimer::singleShot(qMax(1, timeoutMs), this, [this, id]() {
+        auto pending = m_pending.find(id);
+        if (pending == m_pending.end()) return;
+        auto callback = std::move(pending.value());
+        m_pending.erase(pending);
+        if (callback)
+            callback({}, {{QStringLiteral("code"), -32001},
+                          {QStringLiteral("message"), QStringLiteral("Request timed out.")}});
+    });
     return id;
+}
+
+void RpcClient::cancelRequest(int id) {
+    auto pending = m_pending.find(id);
+    if (pending == m_pending.end()) return;
+    auto callback = std::move(pending.value());
+    m_pending.erase(pending);
+    sendNotification(QStringLiteral("$/cancelRequest"), {{QStringLiteral("id"), id}});
+    if (callback)
+        callback({}, {{QStringLiteral("code"), -32800},
+                      {QStringLiteral("message"), QStringLiteral("Request cancelled.")}});
+}
+
+void RpcClient::sendResponse(const QJsonValue& id, const QJsonValue& result,
+                             const QJsonObject& error) {
+    QJsonObject response{{QStringLiteral("jsonrpc"), QStringLiteral("2.0")},
+                         {QStringLiteral("id"), id}};
+    if (error.isEmpty())
+        response.insert(QStringLiteral("result"),
+                        result.isUndefined() ? QJsonValue(QJsonValue::Null) : result);
+    else
+        response.insert(QStringLiteral("error"), error);
+    const auto message = encodeMessage(response);
+    if (message.isEmpty() || m_process->write(message) != message.size())
+        emit protocolError(QStringLiteral("Could not write JSON-RPC response."));
 }
 
 void RpcClient::sendNotification(const QString& method, const QJsonObject& params) {
     QJsonObject notification;
     notification[QStringLiteral("jsonrpc")] = QStringLiteral("2.0");
     notification[QStringLiteral("method")] = method;
-    if (!params.isEmpty()) {
-        notification[QStringLiteral("params")] = params;
-    }
+    notification[QStringLiteral("params")] = params;
     const QByteArray message = encodeMessage(notification);
     if (message.isEmpty()) {
         emit protocolError(QStringLiteral("JSON-RPC notification exceeds the 64 MiB frame limit."));
@@ -178,8 +220,26 @@ void RpcClient::dispatchMessage(const QByteArray& json) {
         failPending(reason);
     };
     if (object.value(QStringLiteral("jsonrpc")).toString() != QStringLiteral("2.0") ||
-        hasId == hasMethod) {
+        (!hasId && !hasMethod)) {
         rejectMessage(QStringLiteral("Malformed JSON-RPC message."));
+        return;
+    }
+
+    if (hasMethod) {
+        const QString method = object.value(QStringLiteral("method")).toString();
+        const auto id = object.value(QStringLiteral("id"));
+        if (method.isEmpty() ||
+            (object.contains(QStringLiteral("params")) &&
+             !object.value(QStringLiteral("params")).isObject()) ||
+            (hasId && !id.isString() && !id.isDouble())) {
+            rejectMessage(QStringLiteral("Malformed JSON-RPC server message."));
+            return;
+        }
+        if (hasId)
+            emit serverRequestReceived(id, method,
+                                       object.value(QStringLiteral("params")).toObject());
+        else
+            emit notificationReceived(method, object.value(QStringLiteral("params")).toObject());
         return;
     }
 
@@ -199,7 +259,6 @@ void RpcClient::dispatchMessage(const QByteArray& json) {
         const bool hasResult = object.contains(QStringLiteral("result"));
         const bool hasError = object.contains(QStringLiteral("error"));
         if (!idIsValid || hasResult == hasError ||
-            (hasResult && !object.value(QStringLiteral("result")).isObject()) ||
             (hasError && !object.value(QStringLiteral("error")).isObject())) {
             rejectMessage(QStringLiteral("Malformed JSON-RPC response."));
             return;
@@ -207,9 +266,9 @@ void RpcClient::dispatchMessage(const QByteArray& json) {
 
         auto pending = m_pending.find(id);
         if (pending != m_pending.end()) {
-            ResponseCallback callback = std::move(pending.value());
+            ValueResponseCallback callback = std::move(pending.value());
             m_pending.erase(pending);
-            const QJsonObject result = object.value(QStringLiteral("result")).toObject();
+            const QJsonValue result = object.value(QStringLiteral("result"));
             const QJsonObject error = object.value(QStringLiteral("error")).toObject();
             if (callback) {
                 callback(result, error);
@@ -219,14 +278,6 @@ void RpcClient::dispatchMessage(const QByteArray& json) {
         emit orphanResponse(id, object);
         return;
     }
-
-    const QString method = object.value(QStringLiteral("method")).toString();
-    if (method.isEmpty() || (object.contains(QStringLiteral("params")) &&
-                             !object.value(QStringLiteral("params")).isObject())) {
-        rejectMessage(QStringLiteral("Malformed JSON-RPC notification."));
-        return;
-    }
-    emit notificationReceived(method, object.value(QStringLiteral("params")).toObject());
 }
 
 QByteArray RpcClient::encodeMessage(const QJsonObject& object) const {
@@ -249,7 +300,7 @@ void RpcClient::failPending(const QString& reason) {
     }
     const auto pending = std::move(m_pending);
     m_pending.clear();
-    for (const ResponseCallback& callback : pending) {
+    for (const ValueResponseCallback& callback : pending) {
         if (callback) {
             callback({}, {{QStringLiteral("code"), -32000}, {QStringLiteral("message"), reason}});
         }

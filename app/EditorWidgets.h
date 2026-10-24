@@ -1,11 +1,11 @@
 #pragma once
-#include <QKeyEvent>
 #include <QHelpEvent>
+#include <QKeyEvent>
 #include <QScrollBar>
 #include <QToolTip>
 
-#include "WorkspaceSupport.h"
 #include "forge/core/DiagnosticsModel.h"
+#include "WorkspaceSupport.h"
 
 class ForgeCodeEditor;
 class ForgeSyntaxHighlighter;
@@ -60,16 +60,14 @@ public:
                 [this]() { navigateDiagnostics(1); });
         m_inspectionWidget->adjustSize();
         m_inspectionWidget->hide();
-        connect(this, &QPlainTextEdit::blockCountChanged, this,
-                [this]() {
-                    updateLineNumberAreaWidth();
-                    m_markerBar->update();
-                });
-        connect(this, &QPlainTextEdit::updateRequest, this,
-                [this](const QRect& rect, int dy) {
-                    updateLineNumberArea(rect, dy);
-                    m_markerBar->update();
-                });
+        connect(this, &QPlainTextEdit::blockCountChanged, this, [this]() {
+            updateLineNumberAreaWidth();
+            m_markerBar->update();
+        });
+        connect(this, &QPlainTextEdit::updateRequest, this, [this](const QRect& rect, int dy) {
+            updateLineNumberArea(rect, dy);
+            m_markerBar->update();
+        });
         connect(this, &QPlainTextEdit::cursorPositionChanged, this,
                 [this]() { highlightCurrentLine(); });
         connect(verticalScrollBar(), &QScrollBar::rangeChanged, this,
@@ -105,11 +103,9 @@ public:
         if (m_diagnostics.isEmpty()) {
             m_inspectionWidget->hide();
         } else {
-            m_inspectionCount->setText(
-                QStringLiteral("✖ %1  ⚠ %2").arg(errors).arg(warnings));
-            m_inspectionCount->setToolTip(QStringLiteral("%1 errors, %2 warnings")
-                                              .arg(errors)
-                                              .arg(warnings));
+            m_inspectionCount->setText(QStringLiteral("✖ %1  ⚠ %2").arg(errors).arg(warnings));
+            m_inspectionCount->setToolTip(
+                QStringLiteral("%1 errors, %2 warnings").arg(errors).arg(warnings));
             m_inspectionWidget->adjustSize();
             m_inspectionWidget->show();
             m_inspectionWidget->raise();
@@ -132,11 +128,9 @@ public:
         }
         for (const auto& diagnostic : m_diagnostics) {
             const QColor color =
-                diagnostic.severity == forge::core::DiagnosticSeverity::Error
-                    ? m_errorColor
-                    : diagnostic.severity == forge::core::DiagnosticSeverity::Warning
-                          ? m_warningColor
-                          : m_infoColor;
+                diagnostic.severity == forge::core::DiagnosticSeverity::Error     ? m_errorColor
+                : diagnostic.severity == forge::core::DiagnosticSeverity::Warning ? m_warningColor
+                                                                                  : m_infoColor;
             const qreal y = (diagnostic.line - 1.0) / (blockCount() - 1) * m_markerBar->height();
             painter.fillRect(QRectF(0, y, m_markerBar->width(), 3), color);
         }
@@ -325,18 +319,16 @@ private:
             return;
         }
         QTextCursor cursor(block);
-        cursor.setPosition(block.position() +
-                           qBound(0, diagnostic.col - 1, block.text().size()));
+        cursor.setPosition(block.position() + qBound(0, diagnostic.col - 1, block.text().size()));
         setTextCursor(cursor);
         centerCursor();
         setFocus();
     }
 
     QColor severityColor(forge::core::DiagnosticSeverity severity) const {
-        return severity == forge::core::DiagnosticSeverity::Error
-                   ? m_errorColor
-                   : severity == forge::core::DiagnosticSeverity::Warning ? m_warningColor
-                                                                           : m_infoColor;
+        return severity == forge::core::DiagnosticSeverity::Error     ? m_errorColor
+               : severity == forge::core::DiagnosticSeverity::Warning ? m_warningColor
+                                                                      : m_infoColor;
     }
 
     void refreshFunctionFolds() {
@@ -493,7 +485,8 @@ private:
             if (!endBlock.isValid()) {
                 endBlock = block;
             }
-            int end = endBlock.position() + qBound(0, diagnostic.endCol - 1, endBlock.text().size());
+            int end =
+                endBlock.position() + qBound(0, diagnostic.endCol - 1, endBlock.text().size());
             if (end <= start) {
                 if (start > block.position()) {
                     --start;

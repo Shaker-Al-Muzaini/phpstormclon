@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <QApplication>
-#include <QCryptographicHash>
 #include <QComboBox>
+#include <QCryptographicHash>
 #include <QDockWidget>
 #include <QFile>
 #include <QFontInfo>
@@ -18,18 +18,18 @@
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTextCursor>
-#include <QTreeWidget>
 #include <QTimer>
+#include <QTreeWidget>
 
 #include "BrandSplash.h"
 #include "FindBar.h"
-#include "ProblemsPanel.h"
 #include "forge/core/ActionManager.h"
 #include "forge/core/DiagnosticsModel.h"
 #include "forge/core/FileWatcher.h"
 #include "forge/core/ServiceSupervisor.h"
 #include "forge/core/Settings.h"
 #include "MainWindow.h"
+#include "ProblemsPanel.h"
 
 namespace {
 struct Workspace {
@@ -179,13 +179,26 @@ TEST(ProblemsPanel, GroupsFiltersShowsContextAndActivatesLocations) {
     ASSERT_NE(filter, nullptr);
     EXPECT_EQ(status->text(), "No problems found");
 
-    const QVector<forge::core::Diagnostic> diagnostics{
-        {file, 3, 1, 3, 2, forge::core::DiagnosticSeverity::Error,
-         QStringLiteral("Unexpected token"), QStringLiteral("phpintel"),
-         QStringLiteral("php.syntax"), {}},
-        {file, 5, 1, 5, 2, forge::core::DiagnosticSeverity::Warning,
-         QStringLiteral("Deprecated call"), QStringLiteral("phpintel"),
-         QStringLiteral("php.deprecated"), {}}};
+    const QVector<forge::core::Diagnostic> diagnostics{{file,
+                                                        3,
+                                                        1,
+                                                        3,
+                                                        2,
+                                                        forge::core::DiagnosticSeverity::Error,
+                                                        QStringLiteral("Unexpected token"),
+                                                        QStringLiteral("phpintel"),
+                                                        QStringLiteral("php.syntax"),
+                                                        {}},
+                                                       {file,
+                                                        5,
+                                                        1,
+                                                        5,
+                                                        2,
+                                                        forge::core::DiagnosticSeverity::Warning,
+                                                        QStringLiteral("Deprecated call"),
+                                                        QStringLiteral("phpintel"),
+                                                        QStringLiteral("php.deprecated"),
+                                                        {}}};
     model.setFileDiagnostics(file, QStringLiteral("phpintel"), diagnostics);
     ASSERT_EQ(tree->topLevelItemCount(), 1);
     auto* fileGroup = tree->topLevelItem(0);
@@ -199,9 +212,9 @@ TEST(ProblemsPanel, GroupsFiltersShowsContextAndActivatesLocations) {
     EXPECT_TRUE(details->toPlainText().contains(">    3 | second();"));
 
     QSignalSpy activated(&panel, &ProblemsPanel::locationActivated);
-    ASSERT_TRUE(QMetaObject::invokeMethod(
-        tree, "itemDoubleClicked", Qt::DirectConnection,
-        Q_ARG(QTreeWidgetItem*, fileGroup->child(0)), Q_ARG(int, 0)));
+    ASSERT_TRUE(QMetaObject::invokeMethod(tree, "itemDoubleClicked", Qt::DirectConnection,
+                                          Q_ARG(QTreeWidgetItem*, fileGroup->child(0)),
+                                          Q_ARG(int, 0)));
     ASSERT_EQ(activated.size(), 1);
     EXPECT_EQ(activated.first().at(0).toString(), file);
     EXPECT_EQ(activated.first().at(1).toInt(), 3);
@@ -235,4 +248,64 @@ TEST(Workspace, SplitViewsShareEditsAndSavingEitherViewUpdatesTheSameFile) {
     workspace.actions.action("forge.file.close")->trigger();
     QTest::qWait(20);
     EXPECT_EQ(workspace.window.findChild<QTabWidget*>("EditorTabs")->count(), 0);
+}
+
+TEST(Workspace, CancellingTabClosePreservesCurrentDiagnostics) {
+    QTemporaryDir directory;
+    const auto path = directory.filePath("cancel.php");
+    put(path, "<?php\nnamespace App\n");
+    Workspace workspace;
+    workspace.window.openDocument(path);
+    auto* tabs = workspace.window.findChild<QTabWidget*>("EditorTabs");
+    auto* editor = qobject_cast<QPlainTextEdit*>(tabs->currentWidget());
+    auto* model = workspace.window.findChild<forge::core::DiagnosticsModel*>();
+    ASSERT_NE(model, nullptr);
+    editor->moveCursor(QTextCursor::End);
+    editor->insertPlainText("// unsaved");
+    model->setFileDiagnostics(path, "phpintel",
+                              {{path,
+                                2,
+                                14,
+                                2,
+                                14,
+                                forge::core::DiagnosticSeverity::Error,
+                                "Expected semicolon",
+                                "phpintel",
+                                "php.syntax",
+                                {}}});
+    QTimer::singleShot(0, &workspace.window, []() {
+        if (auto* box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+            box->button(QMessageBox::Cancel)->click();
+    });
+    ASSERT_TRUE(
+        QMetaObject::invokeMethod(tabs, "tabCloseRequested", Qt::DirectConnection, Q_ARG(int, 0)));
+    EXPECT_EQ(tabs->count(), 1);
+    EXPECT_EQ(model->diagnosticsForFile(path).size(), 1);
+    EXPECT_TRUE(editor->document()->isModified());
+}
+
+TEST(Workspace, EditingInvalidatesDiagnosticsFromTheSavedFile) {
+    QTemporaryDir directory;
+    const auto path = directory.filePath("lint.php");
+    put(path, "<?php\nclass C { private $id; private $id; }\n");
+    Workspace workspace;
+    workspace.window.openDocument(path);
+    auto* tabs = workspace.window.findChild<QTabWidget*>("EditorTabs");
+    auto* editor = qobject_cast<QPlainTextEdit*>(tabs->currentWidget());
+    auto* model = workspace.window.findChild<forge::core::DiagnosticsModel*>();
+    ASSERT_NE(model, nullptr);
+    model->setFileDiagnostics(path, "php -l",
+                              {{path,
+                                2,
+                                1,
+                                2,
+                                2,
+                                forge::core::DiagnosticSeverity::Error,
+                                "Cannot redeclare property",
+                                "php -l",
+                                "fatal.syntax",
+                                {}}});
+    editor->setPlainText("<?php\nclass C { private $id; }\n");
+    EXPECT_TRUE(model->diagnosticsForFile(path).isEmpty());
+    EXPECT_EQ(get(path), "<?php\nclass C { private $id; private $id; }\n");
 }

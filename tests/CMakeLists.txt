@@ -6,6 +6,7 @@ qt_add_executable(forge_tests
     unit/test_main.cpp
     unit/test_extensions.cpp
     unit/test_workspace.cpp
+    unit/test_language_client.cpp
     ${CMAKE_SOURCE_DIR}/resources/resources.qrc
 )
 set_property(TARGET forge_tests PROPERTY AUTORCC ON)
@@ -21,7 +22,14 @@ target_link_libraries(forge_tests PRIVATE
 )
 
 # The Windows offscreen plugin uses FreeType instead of the native font database.
-cmake_path(SET forge_qt_plugin_dir NORMALIZE "${Qt6_DIR}/../../../plugins")
+find_package(Qt6QOffscreenIntegrationPlugin QUIET CONFIG HINTS "${Qt6Gui_DIR}")
+if(TARGET Qt6::QOffscreenIntegrationPlugin)
+    set(forge_qt_plugin_dir "$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>/..")
+else()
+    cmake_path(SET forge_qt_plugin_dir NORMALIZE "${Qt6_DIR}/../../../plugins")
+endif()
+set_property(TARGET forge_tests PROPERTY CROSSCOMPILING_EMULATOR
+    "${CMAKE_COMMAND};-E;env;QT_QPA_PLATFORM=offscreen;QT_PLUGIN_PATH=${forge_qt_plugin_dir}")
 set(forge_test_environment
     "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
     "QT_PLUGIN_PATH=set:${forge_qt_plugin_dir}"

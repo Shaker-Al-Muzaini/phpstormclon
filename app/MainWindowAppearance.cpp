@@ -32,8 +32,7 @@ void MainWindow::applyTheme(const QString& name) {
     m_themeName = name;
     const QJsonObject ui = root.value(QStringLiteral("ui")).toObject();
     const QJsonObject metrics = root.value(QStringLiteral("metrics")).toObject();
-    const QColor errorColor(
-        themedColor(ui, QStringLiteral("error"), QStringLiteral("#E06C75")));
+    const QColor errorColor(themedColor(ui, QStringLiteral("error"), QStringLiteral("#E06C75")));
     const QColor warningColor(
         themedColor(ui, QStringLiteral("warning"), QStringLiteral("#E5C07B")));
     const QColor infoColor(themedColor(ui, QStringLiteral("info"), QStringLiteral("#61AFEF")));

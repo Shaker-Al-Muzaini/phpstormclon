@@ -27,8 +27,7 @@ void MainWindow::setupMenus() {
                    "forge.edit.deleteLine", "forge.edit.toggleComment", "forge.edit.moveLineUp",
                    "forge.edit.moveLineDown"});
     auto* view = menu("&View", {"forge.window.projectTree", "forge.window.terminal",
-                                "forge.window.problems",
-                                "forge.window.restoreLayout"});
+                                "forge.window.problems", "forge.window.restoreLayout"});
     m_themeMenu = view->addMenu("Color Theme");
     refreshThemeMenus();
     menu("&Navigate",
@@ -163,13 +162,10 @@ void MainWindow::setupToolbars() {
             button->setIcon(forgeIcon(entry.second, QColor("#A8ADB8"), QColor("#3574F0")));
             bar->addWidget(button);
             if (entry.first == "forge.window.projectTree" ||
-                entry.first == "forge.window.terminal" ||
-                entry.first == "forge.window.problems") {
-                const auto dockName =
-                    entry.first.endsWith("projectTree")
-                        ? "ProjectToolWindow"
-                        : entry.first.endsWith("problems") ? "ProblemsToolWindow"
-                                                           : "TerminalToolWindow";
+                entry.first == "forge.window.terminal" || entry.first == "forge.window.problems") {
+                const auto dockName = entry.first.endsWith("projectTree") ? "ProjectToolWindow"
+                                      : entry.first.endsWith("problems")  ? "ProblemsToolWindow"
+                                                                          : "TerminalToolWindow";
                 if (auto* dock = findChild<QDockWidget*>(dockName)) {
                     action->setCheckable(true);
                     action->setChecked(!dock->isHidden());
@@ -424,9 +420,8 @@ void MainWindow::setupStatusBar() {
     m_readOnlyButton = button("ReadOnlyStatus", "RW");
     m_problemCountButton = button("ProblemCountStatus", "✖ 0  ⚠ 0");
     m_problemCountButton->setToolTip("Open Problems");
-    connect(m_problemCountButton, &QToolButton::clicked, this, [this]() {
-        m_actions->action(QStringLiteral("forge.window.problems"))->trigger();
-    });
+    connect(m_problemCountButton, &QToolButton::clicked, this,
+            [this]() { m_actions->action(QStringLiteral("forge.window.problems"))->trigger(); });
     m_readOnlyButton->setToolTip("Toggle editor read-only mode");
     connect(m_readOnlyButton, &QToolButton::clicked, this, [this]() {
         if (auto* editor = currentEditor()) {

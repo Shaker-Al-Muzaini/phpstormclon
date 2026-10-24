@@ -7,8 +7,8 @@
 #include <QMainWindow>
 #include <QStringList>
 
-#include "forge/core/ServiceSupervisor.h"
 #include "forge/core/DiagnosticsModel.h"
+#include "forge/core/ServiceSupervisor.h"
 
 class QFileSystemModel;
 class QFileIconProvider;
@@ -87,6 +87,9 @@ private:
     void updateDiagnostics();
     void updateProblemsCurrentDocument();
     void connectPhpIntelDocument(QPlainTextEdit* editor);
+    QPlainTextEdit* primaryEditor(QPlainTextEdit* editor) const;
+    int documentVersion(QPlainTextEdit* editor) const;
+    void closePhpIntelDocument(QPlainTextEdit* editor);
     void sendPhpIntelDidOpen(QPlainTextEdit* editor);
     void sendPhpIntelDidChange(QPlainTextEdit* editor);
     void handlePhpIntelDiagnostics(const QJsonObject& params);

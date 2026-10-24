@@ -25,6 +25,8 @@ class RpcClient : public QObject {
 public:
     using ResponseCallback =
         std::function<void(const QJsonObject& result, const QJsonObject& error)>;
+    using ValueResponseCallback =
+        std::function<void(const QJsonValue& result, const QJsonObject& error)>;
 
     explicit RpcClient(QProcess* serviceProcess, QObject* parent = nullptr);
 
@@ -36,6 +38,11 @@ public:
      * @return        The request id assigned
      */
     int sendRequest(const QString& method, const QJsonObject& params, ResponseCallback cb);
+    int sendRequestValue(const QString& method, const QJsonObject& params,
+                         ValueResponseCallback callback, int timeoutMs = 15000);
+    void cancelRequest(int id);
+    void sendResponse(const QJsonValue& id, const QJsonValue& result,
+                      const QJsonObject& error = {});
 
     /**
      * @brief Send a JSON-RPC notification (fire-and-forget, no response expected).
@@ -45,6 +52,8 @@ public:
 signals:
     /// Emitted for every server-sent notification (requests without id from service).
     void notificationReceived(const QString& method, const QJsonObject& params);
+    void serverRequestReceived(const QJsonValue& id, const QString& method,
+                               const QJsonObject& params);
 
     /// Emitted when a response arrives but no callback is registered (unexpected).
     void orphanResponse(int id, const QJsonObject& response);
@@ -63,7 +72,7 @@ private:
     QProcess* m_process;
     QByteArray m_readBuffer;
     std::atomic<int> m_nextId{1};
-    QHash<int, ResponseCallback> m_pending;
+    QHash<int, ValueResponseCallback> m_pending;
     static constexpr qsizetype kMaxFrameBytes = 64 * 1024 * 1024;
 };
 

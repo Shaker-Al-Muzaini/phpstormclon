@@ -19,8 +19,7 @@ void MainWindow::setupWorkspaceFeatures() {
     m_laravelLogDebounce = new QTimer(this);
     m_laravelLogDebounce->setSingleShot(true);
     m_laravelLogDebounce->setInterval(150);
-    connect(m_laravelLogDebounce, &QTimer::timeout, this,
-            &MainWindow::updateLaravelLogDiagnostics);
+    connect(m_laravelLogDebounce, &QTimer::timeout, this, &MainWindow::updateLaravelLogDiagnostics);
     connect(m_extensions, &forge::core::ExtensionManager::changed, this, [this]() {
         refreshExtensionBindings();
         refreshThemeMenus();

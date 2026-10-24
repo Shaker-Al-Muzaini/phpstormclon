@@ -217,6 +217,14 @@ async fn handle_document_notification(
                 return Ok(());
             };
             let version = document.get("version").and_then(Value::as_i64);
+            if existing
+                .version
+                .zip(version)
+                .is_some_and(|(old, new)| new <= old)
+            {
+                warn!(uri, "Ignoring stale document version");
+                return Ok(());
+            }
             incremental_edit(&mut existing.tree, &existing.text, text);
             let mut parser = Parser::new();
             let language: Language = tree_sitter_php::LANGUAGE_PHP.into();
@@ -260,12 +268,12 @@ fn collect_diagnostics(source: &str, tree: &Tree) -> Vec<PhpDiagnostic> {
         if node.is_missing() || node.is_error() {
             let (start_line, start_character, end_line, end_character, code, message) =
                 if node.is_missing() && node.kind() == ";" {
-                    let position = previous_token_end(source, node.start_byte());
+                    let position = previous_token_end(source, node);
                     (
                         position.row,
                         utf16_column(source, position),
                         position.row,
-                        position.column,
+                        utf16_column(source, position),
                         "php.syntax.missing-semicolon",
                         "Expected ';' after this statement",
                     )
@@ -359,7 +367,15 @@ fn point_at_byte(source: &str, byte_offset: usize) -> Point {
     Point { row, column }
 }
 
-fn previous_token_end(source: &str, byte_offset: usize) -> Point {
+fn previous_token_end(source: &str, node: tree_sitter::Node<'_>) -> Point {
+    let mut previous = node.prev_sibling();
+    while let Some(candidate) = previous {
+        if !candidate.is_extra() && !candidate.is_missing() {
+            return candidate.end_position();
+        }
+        previous = candidate.prev_sibling();
+    }
+    let byte_offset = node.start_byte();
     let prefix = &source[..byte_offset.min(source.len())];
     let trimmed = prefix.trim_end();
     point_at_byte(source, trimmed.len())
@@ -554,5 +570,24 @@ mod tests {
             .parse(fixed, Some(&tree))
             .expect("incremental parse succeeds");
         assert!(collect_diagnostics(fixed, &tree).is_empty());
+    }
+
+    #[test]
+    fn missing_semicolon_uses_utf16_and_ignores_trailing_comment() {
+        let source = "<?php\nnamespace تجريبي // comment\nuse Example\\Thing;\n";
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_php::LANGUAGE_PHP.into())
+            .unwrap();
+        let tree = parser.parse(source, None).unwrap();
+        let diagnostics = collect_diagnostics(source, &tree);
+        let diagnostic = diagnostics
+            .iter()
+            .find(|item| item.code == "php.syntax.missing-semicolon")
+            .unwrap();
+        let expected = "namespace تجريبي".encode_utf16().count();
+        assert_eq!(diagnostic.start_line, 1);
+        assert_eq!(diagnostic.start_character, expected);
+        assert_eq!(diagnostic.end_character, expected);
     }
 }

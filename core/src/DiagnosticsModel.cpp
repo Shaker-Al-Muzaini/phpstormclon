@@ -1,12 +1,11 @@
 #include "forge/core/DiagnosticsModel.h"
 
 #include <algorithm>
-#include <utility>
-
 #include <QDir>
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSet>
+#include <utility>
 
 namespace forge::core {
 
@@ -18,10 +17,10 @@ QString absolutePath(const QString& path) {
 }
 
 bool pathIsWithin(const QString& path, const QString& root) {
-    const QString cleanPath = QDir::fromNativeSeparators(
-        QDir::cleanPath(QFileInfo(path).absoluteFilePath()));
-    QString cleanRoot = QDir::fromNativeSeparators(
-        QDir::cleanPath(QFileInfo(root).absoluteFilePath()));
+    const QString cleanPath =
+        QDir::fromNativeSeparators(QDir::cleanPath(QFileInfo(path).absoluteFilePath()));
+    QString cleanRoot =
+        QDir::fromNativeSeparators(QDir::cleanPath(QFileInfo(root).absoluteFilePath()));
     if (!cleanRoot.endsWith(QLatin1Char('/'))) {
         cleanRoot.append(QLatin1Char('/'));
     }
@@ -89,18 +88,18 @@ QVector<Diagnostic> DiagnosticsModel::diagnosticsForFile(const QString& file) co
 void DiagnosticsModel::setFileDiagnostics(const QString& file, const QString& source,
                                           const QVector<Diagnostic>& diagnostics) {
     const QString normalized = absolutePath(file);
-    m_diagnostics.erase(
-        std::remove_if(m_diagnostics.begin(), m_diagnostics.end(),
-                       [&normalized, &source](const Diagnostic& diagnostic) {
+    m_diagnostics.erase(std::remove_if(m_diagnostics.begin(), m_diagnostics.end(),
+                                       [&normalized, &source](const Diagnostic& diagnostic) {
 #ifdef Q_OS_WIN
-                           const bool sameFile =
-                               diagnostic.ownerFile.compare(normalized, Qt::CaseInsensitive) == 0;
+                                           const bool sameFile =
+                                               diagnostic.ownerFile.compare(
+                                                   normalized, Qt::CaseInsensitive) == 0;
 #else
                            const bool sameFile = diagnostic.ownerFile == normalized;
 #endif
-                           return sameFile && diagnostic.source == source;
-                       }),
-        m_diagnostics.end());
+                                           return sameFile && diagnostic.source == source;
+                                       }),
+                        m_diagnostics.end());
     for (Diagnostic diagnostic : diagnostics) {
         if (diagnostic.file.isEmpty()) {
             diagnostic.file = normalized;
@@ -115,6 +114,18 @@ void DiagnosticsModel::setFileDiagnostics(const QString& file, const QString& so
 }
 
 void DiagnosticsModel::clearFileSource(const QString& file, const QString& source) {
+    const auto normalized = absolutePath(file);
+    const bool exists =
+        std::any_of(m_diagnostics.cbegin(), m_diagnostics.cend(),
+                    [&normalized, &source](const Diagnostic& item) {
+                        return item.source == source &&
+#ifdef Q_OS_WIN
+                               item.ownerFile.compare(normalized, Qt::CaseInsensitive) == 0;
+#else
+                                               item.ownerFile == normalized;
+#endif
+                    });
+    if (!exists) return;
     setFileDiagnostics(file, source, {});
 }
 
@@ -128,12 +139,11 @@ void DiagnosticsModel::clearSource(const QString& source) {
     if (changedFiles.isEmpty()) {
         return;
     }
-    m_diagnostics.erase(
-        std::remove_if(m_diagnostics.begin(), m_diagnostics.end(),
-                       [&source](const Diagnostic& diagnostic) {
-                           return diagnostic.source == source;
-                       }),
-        m_diagnostics.end());
+    m_diagnostics.erase(std::remove_if(m_diagnostics.begin(), m_diagnostics.end(),
+                                       [&source](const Diagnostic& diagnostic) {
+                                           return diagnostic.source == source;
+                                       }),
+                        m_diagnostics.end());
     for (const QString& file : std::as_const(changedFiles)) {
         emit fileDiagnosticsChanged(file);
     }
@@ -152,15 +162,16 @@ void DiagnosticsModel::setStatusMessage(const QString& message) {
     emit statusMessageChanged(message);
 }
 
-QVector<Diagnostic> DiagnosticsModel::parsePhpLintOutput(const QString& file,
-                                                         const QString& output, int exitCode) {
+QVector<Diagnostic> DiagnosticsModel::parsePhpLintOutput(const QString& file, const QString& output,
+                                                         int exitCode) {
     if (exitCode == 0) {
         return {};
     }
 
     const QString normalizedOutput = output.trimmed();
     static const QRegularExpression expression(
-        QStringLiteral("(?:PHP\\s+)?(Parse|Fatal) error:\\s*(.*?)\\s+in\\s+(.+?)\\s+on line\\s+(\\d+)"),
+        QStringLiteral(
+            "(?:PHP\\s+)?(Parse|Fatal) error:\\s*(.*?)\\s+in\\s+(.+?)\\s+on line\\s+(\\d+)"),
         QRegularExpression::CaseInsensitiveOption);
     const auto match = expression.match(normalizedOutput);
     if (match.hasMatch()) {
@@ -181,17 +192,17 @@ QVector<Diagnostic> DiagnosticsModel::parsePhpLintOutput(const QString& file,
         }
     }
 
-    return {{absolutePath(file),
-             1,
-             1,
-             1,
-             2,
-             DiagnosticSeverity::Error,
-             normalizedOutput.isEmpty() ? QStringLiteral("PHP syntax check failed.")
-                                        : normalizedOutput,
-             QStringLiteral("php -l"),
-             QStringLiteral("php.syntax"),
-             {}}};
+    return {
+        {absolutePath(file),
+         1,
+         1,
+         1,
+         2,
+         DiagnosticSeverity::Error,
+         normalizedOutput.isEmpty() ? QStringLiteral("PHP syntax check failed.") : normalizedOutput,
+         QStringLiteral("php -l"),
+         QStringLiteral("php.syntax"),
+         {}}};
 }
 
 QVector<Diagnostic> DiagnosticsModel::parseLaravelLog(const QString& logFile,
@@ -261,16 +272,8 @@ QVector<Diagnostic> DiagnosticsModel::parseLaravelLog(const QString& logFile,
         diagnosticLine = frames.constFirst().line;
     }
 
-    return {{diagnosticFile,
-             diagnosticLine,
-             1,
-             diagnosticLine,
-             2,
-             DiagnosticSeverity::Error,
-             message,
-             QStringLiteral("laravel.log"),
-             code,
-             frames}};
+    return {{diagnosticFile, diagnosticLine, 1, diagnosticLine, 2, DiagnosticSeverity::Error,
+             message, QStringLiteral("laravel.log"), code, frames}};
 }
 
 void DiagnosticsModel::emitChanges(const QString& file) {

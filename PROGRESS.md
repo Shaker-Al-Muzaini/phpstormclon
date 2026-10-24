@@ -2,10 +2,21 @@
 
 ## Status
 
-**Current session: Diagnostics and Problems — Windows app/tests build succeeds; Rust and C++ tests are being verified**
+**Current session: Developer tooling continuation — foundation built/tested; UI and developer-tool integration in progress**
 **Product milestone: M1 — Shell and Docking (in progress)**
 
 ---
+
+## 2026-10-24 developer tooling continuation
+
+- Baseline: `5551471`. Continue the native Qt/Rust project on `codex/php-intelligence-tooling`; preserve the Windows Qt/MSVC/Rust defaults and the neutral workspace/personal startup branding boundary.
+- Review reproduced the screenshot's single broad parser recovery region, missing semantic duplicate-member checks, incorrect UTF-16 end offsets, cancelled-close document desynchronization, stale lint/diagnostic results and backward inspection navigation.
+- In progress: document synchronization and JSON-RPC/LSP interoperability; local PHP language-server integration for indexed completion, definition, symbols and diagnostics; terminal history/path/command completion; working Git diff/stage/commit UI; database query tools; PHPStan/PHPCS integration.
+- PHP intelligence will use a locally installed Intelephense server through standard LSP for the requested semantic features. Its free features are sufficient for completion/definition/symbols/diagnostics. The proprietary server is not bundled; installation is explicit and isolated from the project's dependencies, and telemetry is disabled in client configuration. The built-in Rust parser remains available as syntax fallback.
+- Database credentials must remain in memory. Queries will have time/row limits and a read-only transaction. No user database or project command is run automatically.
+- Foundation verified locally: 36/36 CTest cases passed on Linux Qt 6.4.2, including a real Intelephense 1.18.5 process returning member completions, cross-file definitions, duplicate-property diagnostics and clearing them after a fix. Twelve phpintel Rust tests and Clippy passed. Source formatting checks passed. This is not yet a completed editor integration or a Windows verification claim.
+- Fixed cancelled-close desynchronization, stale lint invalidation/cancellation, document-wide versions shared by split views, rejection of old diagnostic results, native parser UTF-16/comment positions and old edit versions. Corrected the restart-limit test's unrealistically short healthy-uptime window, without changing production supervisor behavior.
+- Latest baseline Windows CI stopped at clang-format; it did not build/test C++. Rust and dependency audit jobs passed, with the existing documented RSA exception. New hosted verification remains pending.
 
 ## 2026-10-24 diagnostics and Problems
 

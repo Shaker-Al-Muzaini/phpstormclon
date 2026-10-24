@@ -5,6 +5,7 @@ add_library(forge_core STATIC
     include/forge/core/KeymapManager.h
     include/forge/core/ProjectModel.h
     include/forge/core/RpcClient.h
+    include/forge/core/PhpLanguageClient.h
     include/forge/core/ServiceSupervisor.h
     include/forge/core/Settings.h
     include/forge/core/TextFileCodec.h
@@ -20,6 +21,7 @@ add_library(forge_core STATIC
     src/ActionManager.cpp
     src/ServiceSupervisor.cpp
     src/RpcClient.cpp
+    src/PhpLanguageClient.cpp
     src/Settings.cpp
     src/TextFileCodec.cpp
     src/ProjectModel.cpp

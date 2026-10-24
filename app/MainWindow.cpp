@@ -15,7 +15,7 @@ constexpr int kWindowLayoutVersion = 3;
 
 MainWindow::MainWindow(forge::core::ActionManager* actions,
                        forge::core::ServiceSupervisor* supervisor, QWidget* parent)
-    : QMainWindow(parent), m_actions(actions), m_supervisor(supervisor) {
+    : QMainWindow(parent), m_actions(actions), m_supervisor(supervisor), m_diagnostics(this) {
     setWindowTitle(QStringLiteral("%1 %2").arg(QLatin1String(FORGE_PRODUCT_NAME),
                                                QLatin1String(FORGE_VERSION)));
     setWindowIcon(forgeIcon(QStringLiteral("forge"), QColor(QStringLiteral("#DFE1E5")),
@@ -182,6 +182,11 @@ void MainWindow::setupServices() {
                                     handlePhpIntelDiagnostics(params);
                                 }
                             });
+                }
+                for (auto* editor : findChildren<QPlainTextEdit*>()) {
+                    if (editor->property("forgeSourceEditor").toBool()) {
+                        editor->document()->setProperty("phpIntelUri", QString());
+                    }
                 }
                 for (auto* editor : findChildren<QPlainTextEdit*>()) {
                     if (editor->property("forgeSourceEditor").toBool()) {

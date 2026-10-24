@@ -8,8 +8,8 @@
 #include <QTemporaryDir>
 #include <QtEndian>
 
-#include "forge/core/ExtensionManager.h"
 #include "forge/core/DiagnosticsModel.h"
+#include "forge/core/ExtensionManager.h"
 #include "forge/core/PackageArchive.h"
 #include "forge/core/ProjectSearch.h"
 #include "forge/core/ThemeCatalog.h"
@@ -163,10 +163,16 @@ TEST(DiagnosticsModel, ReplacesOneSourcePerFileAndEmitsPerFileChanges) {
     forge::core::DiagnosticsModel model;
     QSignalSpy fileChanged(&model, &forge::core::DiagnosticsModel::fileDiagnosticsChanged);
     const QString path = directory.filePath("src.php");
-    forge::core::Diagnostic phpError{
-        path, 4, 1, 4, 2, forge::core::DiagnosticSeverity::Error,
-        QStringLiteral("unexpected token"), QStringLiteral("php -l"),
-        QStringLiteral("parse.syntax"), {}};
+    forge::core::Diagnostic phpError{path,
+                                     4,
+                                     1,
+                                     4,
+                                     2,
+                                     forge::core::DiagnosticSeverity::Error,
+                                     QStringLiteral("unexpected token"),
+                                     QStringLiteral("php -l"),
+                                     QStringLiteral("parse.syntax"),
+                                     {}};
     model.setFileDiagnostics(path, QStringLiteral("php -l"), {phpError});
     forge::core::Diagnostic languageError = phpError;
     languageError.source = QStringLiteral("phpintel");
@@ -181,8 +187,9 @@ TEST(DiagnosticsModel, ReplacesOneSourcePerFileAndEmitsPerFileChanges) {
 TEST(DiagnosticsModel, ParsesPhpLintErrorFormatsAndClearsOnSuccess) {
     const QString file = QStringLiteral("C:/project/app.php");
     auto diagnostics = forge::core::DiagnosticsModel::parsePhpLintOutput(
-        file, QStringLiteral("Parse error: syntax error, unexpected token \"use\" in "
-                             "C:/project/app.php on line 7\nErrors parsing C:/project/app.php"),
+        file,
+        QStringLiteral("Parse error: syntax error, unexpected token \"use\" in "
+                       "C:/project/app.php on line 7\nErrors parsing C:/project/app.php"),
         255);
     ASSERT_EQ(diagnostics.size(), 1);
     EXPECT_EQ(diagnostics.first().file, QDir::cleanPath(QFileInfo(file).absoluteFilePath()));
@@ -191,8 +198,9 @@ TEST(DiagnosticsModel, ParsesPhpLintErrorFormatsAndClearsOnSuccess) {
     EXPECT_EQ(diagnostics.first().severity, forge::core::DiagnosticSeverity::Error);
 
     diagnostics = forge::core::DiagnosticsModel::parsePhpLintOutput(
-        file, QStringLiteral("PHP Fatal error: Uncaught Error: failure in "
-                             "C:/project/app.php on line 12"),
+        file,
+        QStringLiteral("PHP Fatal error: Uncaught Error: failure in "
+                       "C:/project/app.php on line 12"),
         255);
     ASSERT_EQ(diagnostics.size(), 1);
     EXPECT_EQ(diagnostics.first().line, 12);
@@ -208,15 +216,15 @@ TEST(DiagnosticsModel, ParsesLatestLaravelExceptionAndKeepsProjectFrames) {
     const QString source = directory.filePath("app/Exceptions/Handler.php");
     const QString frame = directory.filePath("app/Services/Example.php");
     const QString log = directory.filePath("storage/logs/laravel.log");
-    const QByteArray contents =
-        QStringLiteral("[2026-10-24 00:00:00] local.ERROR: OldException: old at "
-                       "%1:2\n"
-                       "[2026-10-24 00:01:00] local.ERROR: "
-                       "App\\Exceptions\\FailureException: Runtime failure at %2:19\n"
-                       "#0 %3(24): App\\Services\\Example->run()\n"
-                       "#1 %1(12): App\\Services\\Example->run()\n")
-            .arg(source, source, frame)
-            .toUtf8();
+    const QByteArray contents = QStringLiteral(
+                                    "[2026-10-24 00:00:00] local.ERROR: OldException: old at "
+                                    "%1:2\n"
+                                    "[2026-10-24 00:01:00] local.ERROR: "
+                                    "App\\Exceptions\\FailureException: Runtime failure at %2:19\n"
+                                    "#0 %3(24): App\\Services\\Example->run()\n"
+                                    "#1 %1(12): App\\Services\\Example->run()\n")
+                                    .arg(source, source, frame)
+                                    .toUtf8();
     const auto diagnostics =
         forge::core::DiagnosticsModel::parseLaravelLog(log, contents, directory.path());
     ASSERT_EQ(diagnostics.size(), 1);
@@ -227,7 +235,8 @@ TEST(DiagnosticsModel, ParsesLatestLaravelExceptionAndKeepsProjectFrames) {
               QStringLiteral("App\\Exceptions\\FailureException: Runtime failure"));
     ASSERT_EQ(diagnostics.first().frames.size(), 2);
     EXPECT_EQ(diagnostics.first().frames.first().file, QDir::cleanPath(frame));
-    EXPECT_TRUE(forge::core::DiagnosticsModel::parseLaravelLog(log, {}, directory.path()).isEmpty());
+    EXPECT_TRUE(
+        forge::core::DiagnosticsModel::parseLaravelLog(log, {}, directory.path()).isEmpty());
 }
 
 TEST(Extensions, ImportsRealDeflatedOpenVsxThemeAndRetainsItsLicense) {

@@ -34,8 +34,7 @@ void MainWindow::setProjectRoot(const QString& path) {
             QString::fromLatin1(saveState(kWindowLayoutVersion).toBase64()));
     m_projectRoot = info.absoluteFilePath();
     m_projectSearch->setRoot(m_projectRoot);
-    m_laravelLogPath =
-        QDir(m_projectRoot).filePath(QStringLiteral("storage/logs/laravel.log"));
+    m_laravelLogPath = QDir(m_projectRoot).filePath(QStringLiteral("storage/logs/laravel.log"));
     const QString logDirectory = QFileInfo(m_laravelLogPath).absolutePath();
     m_fileWatcher->watchDirectory(logDirectory);
     m_diagnostics.clearFileSource(m_laravelLogPath, QStringLiteral("laravel.log"));
@@ -314,20 +313,6 @@ void MainWindow::closeDocument(int index) {
     if (!editor) {
         return;
     }
-    const QString path = editor->property("filePath").toString();
-    if (!path.isEmpty()) {
-        if (m_phpIntelClient && editor->property("phpIntelOpened").toBool()) {
-            if (QProcess* process = m_supervisor->process(QStringLiteral("phpintel"));
-                process && process->state() == QProcess::Running) {
-                m_phpIntelClient->sendNotification(
-                    QStringLiteral("textDocument/didClose"),
-                    {{QStringLiteral("textDocument"),
-                      QJsonObject{{QStringLiteral("uri"), QUrl::fromLocalFile(path).toString(
-                                                             QUrl::FullyEncoded)}}}});
-            }
-        }
-        m_diagnostics.clearFileSource(path, QStringLiteral("phpintel"));
-    }
     if (editor->document()->isModified()) {
         const QMessageBox::StandardButton result = QMessageBox::warning(
             this, QStringLiteral("Unsaved changes"),
@@ -339,6 +324,7 @@ void MainWindow::closeDocument(int index) {
             return;
         }
     }
+    closePhpIntelDocument(editor);
     QWidget* removed = m_editorTabs->widget(index);
     m_editorTabs->removeTab(index);
     removed->deleteLater();

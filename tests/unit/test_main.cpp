@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QEventLoop>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QKeyEvent>
@@ -90,10 +91,14 @@ int runChildFixture(const QString& mode) {
         return 0;
     }
 
-    const QJsonObject response{
-        {QStringLiteral("jsonrpc"), QStringLiteral("2.0")},
-        {QStringLiteral("id"), request.value(QStringLiteral("id"))},
-        {QStringLiteral("result"), QJsonObject{{QStringLiteral("pong"), true}}}};
+    QJsonValue payload = QJsonObject{{QStringLiteral("pong"), true}};
+    if (request.value(QStringLiteral("method")) == QStringLiteral("fixture/array"))
+        payload = QJsonArray{"first", "second"};
+    if (request.value(QStringLiteral("method")) == QStringLiteral("fixture/null"))
+        payload = QJsonValue(QJsonValue::Null);
+    const QJsonObject response{{QStringLiteral("jsonrpc"), QStringLiteral("2.0")},
+                               {QStringLiteral("id"), request.value(QStringLiteral("id"))},
+                               {QStringLiteral("result"), payload}};
     const QByteArray responseBody = QJsonDocument(response).toJson(QJsonDocument::Compact);
     const QByteArray frame = QByteArrayLiteral("Content-Length: ") +
                              QByteArray::number(responseBody.size()) +
@@ -384,7 +389,7 @@ TEST(ServiceSupervisor, DisablesServiceAfterRestartLimit) {
     config.arguments = {QStringLiteral("--crash-fixture")};
     config.maxRestarts = 1;
     config.backoffMs = 1;
-    config.healthyUptimeMs = 100;
+    config.healthyUptimeMs = 60000;
     supervisor.registerService(config);
     if (!disabled) {
         waitForEventLoop(loop);

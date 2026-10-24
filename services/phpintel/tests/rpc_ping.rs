@@ -212,6 +212,31 @@ async fn phpintel_publishes_and_clears_incremental_php_diagnostics() {
 
     write_message(
         &mut stdin,
+        &serde_json::json!({
+            "jsonrpc": "2.0", "method": "textDocument/didChange",
+            "params": {
+                "textDocument": {"uri": "file:///workspace/example.php", "version": 1},
+                "contentChanges": [{"text": "<?php namespace App"}]
+            }
+        }),
+    )
+    .await
+    .expect("failed to send stale document version");
+    write_message(
+        &mut stdin,
+        &serde_json::json!({"jsonrpc": "2.0", "id": 99, "method": "$/ping"}),
+    )
+    .await
+    .unwrap();
+    let response = read_message_with_timeout(&mut stdout).await;
+    assert_eq!(
+        response["id"], 99,
+        "a stale edit must not publish diagnostics"
+    );
+    assert_eq!(response["result"]["pong"], true);
+
+    write_message(
+        &mut stdin,
         &serde_json::json!({"jsonrpc": "2.0", "method": "$/shutdown"}),
     )
     .await
